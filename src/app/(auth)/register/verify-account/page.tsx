@@ -1,13 +1,11 @@
 import VerifyAccountForm from "@/components/form/verify-account-form";
 import Logo from "@/components/shared/Logo";
-import Link from "next/link";
 import { Suspense } from "react";
 import { VerifyFormSkeleton } from "./verify-form-skeleton";
 
 export default function VerifyAccountPage() {
   return (
     <div className="min-h-screen w-full bg-[#f7f9fc] relative overflow-hidden">
-      {/* Dotted texture, subtle */}
       <div
         className="absolute inset-0 opacity-[0.04]"
         style={{
@@ -16,12 +14,10 @@ export default function VerifyAccountPage() {
         }}
       />
 
-      <Link
-        href="/"
-        className="absolute top-6 left-6 z-10 flex items-center gap-2.5"
-      >
+      {/* Logo */}
+      <div className="absolute top-6 left-6 z-10 flex items-center gap-2.5">
         <Logo />
-      </Link>
+      </div>
 
       <div className="relative z-10 flex min-h-screen items-center justify-center p-4 sm:p-6 lg:p-10">
         <div className="flex w-full max-w-md flex-col items-center">

@@ -84,8 +84,10 @@ export default function VerifyAccountForm() {
     setResendTimer(getRemainingSeconds(expiry));
   }, [email]);
 
+  const isCounting = resendTimer > 0;
+
   useEffect(() => {
-    if (!email || resendTimer <= 0) return;
+    if (!email || !isCounting) return;
 
     const interval = setInterval(() => {
       const expiry = readExpiry(email) ?? Date.now();
@@ -97,7 +99,13 @@ export default function VerifyAccountForm() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [resendTimer, email]);
+  }, [email, isCounting]);
+
+  const startCooldown = () => {
+    const expiry = Date.now() + RESEND_COOLDOWN * 1000;
+    writeExpiry(email, expiry);
+    setResendTimer(RESEND_COOLDOWN);
+  };
 
   const handleOTP = () => {
     if (otp.length !== 6) {
@@ -145,27 +153,41 @@ export default function VerifyAccountForm() {
   };
 
   const handleResend = () => {
-    if (resendTimer > 0 || resendPending) return;
-
     resendOtp(
       { email },
       {
-        onSuccess: () => {
-          const expiry = Date.now() + RESEND_COOLDOWN * 1000;
-          writeExpiry(email, expiry);
-          setResendTimer(RESEND_COOLDOWN);
+        onSuccess: (res) => {
+          if (res && res.success === false) {
+            toast.add({
+              title: "Resend Failed",
+              description: "Something went wrong. Please try again.",
+              type: "error",
+            });
+            return;
+          }
+
+          setOtp("");
+          setIsInValid(false);
+          startCooldown();
+
           toast.add({
             title: "OTP Sent",
-            description: "A new code has been sent to your email.",
+            description: "A new OTP has been sent to your email",
             type: "success",
           });
         },
         onError: (err) => {
+          const message = err.message || "Failed to resend OTP";
+
           toast.add({
-            title: "Failed to resend",
-            description: err.message || "Please try again later.",
+            title: "Resend Failed",
+            description: message,
             type: "error",
           });
+
+          if (message.toLowerCase().includes("session expired")) {
+            router.push("/register");
+          }
         },
       },
     );
