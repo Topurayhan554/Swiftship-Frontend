@@ -8,10 +8,9 @@ import {
   FieldError,
   FieldGroup,
   FieldLabel,
-  FieldSeparator,
 } from "@/components/ui/field";
 import { useState } from "react";
-import { Eye, EyeClosed, Loader2 } from "lucide-react";
+import { Bike, Eye, EyeClosed, Loader2, User } from "lucide-react";
 import Link from "next/link";
 import { signupSchema, type Role } from "@/validation";
 // import GoogleLoginButton from "../modules/google-login/googleLoginButton";
@@ -19,9 +18,9 @@ import { useRegistration } from "@/hooks";
 import { toast } from "../ui/toast";
 import { useRouter } from "next/navigation";
 
-const ROLE_OPTIONS: { value: Role; label: string }[] = [
-  { value: "CUSTOMER", label: "Customer" },
-  { value: "COURIER", label: "Courier" },
+const ROLE_OPTIONS: { value: Role; label: string; icon: typeof User }[] = [
+  { value: "CUSTOMER", label: "Customer", icon: User },
+  { value: "COURIER", label: "Courier", icon: Bike },
 ];
 
 const inputClass =
@@ -130,21 +129,24 @@ export default function RegisterForm() {
                     I want to join as
                   </FieldLabel>
                   <div className="grid grid-cols-2 gap-2">
-                    {ROLE_OPTIONS.map((opt) => {
-                      const active = field.state.value === opt.value;
+                    {ROLE_OPTIONS.map(({ value, label, icon: RoleIcon }) => {
+                      const active = field.state.value === value;
                       return (
                         <button
-                          key={opt.value}
+                          key={value}
                           type="button"
-                          onClick={() => field.handleChange(opt.value)}
+                          onClick={() => field.handleChange(value)}
                           aria-pressed={active}
-                          className={`h-9 rounded-lg border text-[13px] font-medium transition ${
+                          className={`flex h-11 items-center justify-center gap-2 rounded-xl border text-[13px] font-medium transition-all ${
                             active
-                              ? "border-[#ff7a1a] bg-[#ff7a1a]/10 text-[#0f2a4a]"
-                              : "border-[#e2e8f0] text-[#94a3b8] hover:text-[#64748b]"
+                              ? "border-[#ff7a1a] bg-[#ff7a1a]/10 text-[#0f2a4a] shadow-sm shadow-[#ff7a1a]/20"
+                              : "border-[#e2e8f0] text-[#94a3b8] hover:border-[#cbd5e1] hover:text-[#64748b]"
                           }`}
                         >
-                          {opt.label}
+                          <RoleIcon
+                            className={`size-4 ${active ? "text-[#ff7a1a]" : ""}`}
+                          />
+                          {label}
                         </button>
                       );
                     })}
@@ -340,7 +342,7 @@ export default function RegisterForm() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="mt-1 h-10 w-full rounded-lg bg-[#0f2a4a] text-[15px] font-medium text-white hover:bg-[#143a63] shadow-md shadow-[#0f2a4a]/20 disabled:cursor-not-allowed disabled:opacity-70"
+                className="mt-2 h-11 w-full rounded-xl bg-gradient-to-r from-[#0f2a4a] to-[#143a63] text-[15px] font-medium text-white shadow-lg shadow-[#0f2a4a]/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[#ff7a1a]/20 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -355,8 +357,9 @@ export default function RegisterForm() {
           }}
         </form.Subscribe>
 
+        {/* Google login (enable later, then re-add FieldSeparator) 
         <FieldSeparator className="mt-2">Or continue with</FieldSeparator>
-        {/* <div className="mt-4">
+        <div className="mt-4">
           <GoogleLoginButton
             successTitle="Signed Up Successfully"
             successDescription="Welcome to SwiftShip!"
@@ -373,6 +376,10 @@ export default function RegisterForm() {
           >
             Sign In
           </Link>
+        </p>
+
+        <p className="text-center text-[11px] leading-relaxed text-[#94a3b8]">
+          By creating an account you agree to our Terms & Privacy Policy.
         </p>
       </form>
     </>
