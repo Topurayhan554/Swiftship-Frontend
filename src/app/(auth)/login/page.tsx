@@ -1,165 +1,188 @@
+"use client";
+
 import LoginForm from "@/components/form/login-form";
 import Logo from "@/components/shared/Logo";
 import Link from "next/link";
-import { Package, MapPin, Truck } from "lucide-react";
-import {
-  FaLinkedinIn,
-  FaInstagram,
-  FaFacebookF,
-  FaTwitter,
-} from "react-icons/fa";
-import { HiOutlinePhone, HiOutlineMail } from "react-icons/hi";
+import Image from "next/image";
+import { motion, useReducedMotion } from "framer-motion";
+import { ArrowUpRight, Truck } from "lucide-react";
 
-const socialIcons = [
-  { name: "linkedin", Icon: FaLinkedinIn },
-  { name: "instagram", Icon: FaInstagram },
-  { name: "facebook", Icon: FaFacebookF },
-  { name: "twitter", Icon: FaTwitter },
-];
+const glass =
+  "bg-white/45 ring-1 ring-white/80 backdrop-blur-[6px] shadow-lg shadow-[#0f2a4a]/10";
+
+const EASE = [0.22, 1, 0.36, 1] as const;
 
 export default function LoginPage() {
+  const reduce = useReducedMotion() ?? false;
+
   return (
-    <div className="min-h-screen w-full bg-white relative overflow-hidden">
-      <div className="relative z-10 flex min-h-screen items-center justify-center p-4 sm:p-6 lg:p-10">
-        <div className="flex w-full max-w-5xl overflow-hidden rounded-[28px] bg-white shadow-2xl">
-          {/*  LEFT PANEL — Courier / tracking theme  */}
-          <div className="relative hidden lg:flex lg:w-[55%] flex-col overflow-hidden bg-gradient-to-br from-[#0f2a4a] via-[#143a63] to-[#ff7a1a] lg:flex">
-            {/* Curved right edge */}
-            <div className="absolute right-0 top-0 z-20 h-full w-20">
-              <svg
-                viewBox="0 0 100 100"
-                preserveAspectRatio="none"
-                className="h-full w-full fill-[#f7f9fc]"
-              >
-                <path d="M100 0 H45 C20 10 20 25 40 35 C65 45 75 55 60 70 C40 85 20 85 45 100 H100 Z" />
-              </svg>
-            </div>
+    <div className="relative min-h-screen w-full overflow-hidden bg-white">
+      {/* Background image with slow ken-burns */}
+      <motion.div
+        className="absolute inset-0"
+        initial={{ scale: 1 }}
+        animate={reduce ? { scale: 1 } : { scale: 1.06 }}
+        transition={{
+          duration: 20,
+          repeat: Infinity,
+          repeatType: "reverse",
+          ease: "easeInOut",
+        }}
+      >
+        <Image
+          src="/delivery-bg2.jpg"
+          alt="Delivery illustration with courier, truck and scooter"
+          fill
+          priority
+          className="object-cover object-center"
+        />
+      </motion.div>
 
-            {/* Logo */}
-            <div className="relative z-10 flex items-center gap-2.5 p-8 pb-4">
-              <Logo />
-            </div>
+      <div className="relative z-10 flex min-h-screen flex-col">
+        {/* Top bar */}
+        <header className="flex items-center justify-between p-5 sm:p-8">
+          <motion.div
+            className={`rounded-full px-5 py-2 ${glass}`}
+            initial={{ opacity: 0, y: -24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: EASE }}
+          >
+            <Logo />
+          </motion.div>
 
-            {/* Dotted "route map" pattern */}
-            <div
-              className="absolute inset-0 opacity-[0.07]"
-              style={{
-                backgroundImage: `radial-gradient(circle, #ffffff 1.5px, transparent 1.5px)`,
-                backgroundSize: "26px 26px",
-              }}
-            />
-
-            {/* Dashed delivery route line */}
-            <svg
-              className="absolute left-10 top-1/4 z-0 h-[55%] w-[70%] opacity-40"
-              viewBox="0 0 300 300"
-              fill="none"
+          <motion.div
+            initial={{ opacity: 0, y: -24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1, ease: EASE }}
+            whileHover={reduce ? undefined : { scale: 1.04 }}
+            whileTap={reduce ? undefined : { scale: 0.97 }}
+          >
+            <Link
+              href="/register"
+              className={`group inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-[13px] font-semibold text-[#0f2a4a] transition hover:bg-white/80 ${glass}`}
             >
-              <path
-                d="M20 260 C 80 220, 60 140, 140 120 S 260 60, 280 20"
-                stroke="white"
-                strokeWidth="3"
-                strokeDasharray="2 14"
-                strokeLinecap="round"
-              />
-            </svg>
+              Create account
+              <ArrowUpRight className="size-4 text-[#ff7a1a] transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+            </Link>
+          </motion.div>
+        </header>
 
-            {/* Center content: tracking card illustration */}
-            <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-8">
-              <div className="relative w-full max-w-[320px] rounded-2xl bg-white/10 p-6 backdrop-blur-sm ring-1 ring-white/20">
-                <div className="flex items-center justify-between">
-                  <span className="rounded-full bg-[#ff7a1a] px-3 py-1 text-[11px] font-semibold text-white">
-                    In Transit
-                  </span>
-                  <span className="text-[11px] text-white/60">#SW-28471</span>
-                </div>
+        {/* Main */}
+        <main className="flex flex-1 items-center justify-center px-4 pb-8 lg:justify-end lg:px-16 xl:px-24">
+          {/* Login card */}
+          <motion.div
+            className="relative w-full max-w-[400px] pt-8"
+            initial={{ opacity: 0, y: 60, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{
+              type: "spring",
+              stiffness: 90,
+              damping: 16,
+              delay: 0.25,
+            }}
+          >
+            {/* Floating icon badge */}
+            <motion.div
+              className="absolute left-1/2 top-0 z-10 -translate-x-1/2"
+              initial={{ opacity: 0, scale: 0, rotate: -90 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              transition={{
+                type: "spring",
+                stiffness: 200,
+                damping: 14,
+                delay: 0.7,
+              }}
+            >
+              <motion.div
+                className="relative flex size-16 items-center justify-center rounded-full bg-gradient-to-br from-[#ff7a1a] to-[#ff9a4d] shadow-xl shadow-[#ff7a1a]/40 ring-4 ring-white/80"
+                animate={reduce ? undefined : { y: [0, -5, 0] }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              >
+                {/* Pulse ring */}
+                {!reduce && (
+                  <motion.span
+                    className="absolute inset-0 rounded-full ring-2 ring-[#ff7a1a]"
+                    animate={{ scale: [1, 1.6], opacity: [0.6, 0] }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeOut",
+                    }}
+                  />
+                )}
+                <Truck className="relative size-7 text-white" />
+              </motion.div>
+            </motion.div>
 
-                <div className="mt-6 flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#ff7a1a]">
-                    <Truck className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="h-[2px] flex-1 bg-gradient-to-r from-[#ff7a1a] to-white/20" />
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/30">
-                    <MapPin className="h-5 w-5 text-white" />
-                  </div>
-                </div>
+            <div className="rounded-3xl bg-white/55 px-8 pb-8 pt-12 shadow-2xl shadow-[#0f2a4a]/15 ring-1 ring-white/90 backdrop-blur-[8px] sm:px-9">
+              <motion.div
+                className="mb-7 text-center"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.8, ease: EASE }}
+              >
+                <h1 className="text-[26px] font-semibold tracking-tight text-[#0f2a4a]">
+                  Welcome back
+                </h1>
+                <p className="mt-1 text-[13.5px] text-[#334155]">
+                  Sign in to track and manage your deliveries
+                </p>
+              </motion.div>
 
-                <div className="mt-5 flex items-center gap-2 text-white/80">
-                  <Package className="h-4 w-4" />
-                  <p className="text-[13px]">
-                    Your parcel is on the way — ETA 2h 15m
-                  </p>
-                </div>
-              </div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.95, ease: EASE }}
+              >
+                <LoginForm />
+              </motion.div>
+            </div>
+          </motion.div>
+        </main>
 
-              <h2 className="mt-8 text-center text-xl font-semibold text-white">
-                Deliver Smarter, Track Faster
-              </h2>
-              <p className="mt-2 max-w-[280px] text-center text-[13px] text-white/70">
-                One platform for bookings, live tracking, and payments.
+        <motion.div
+          className="absolute bottom-16 left-8 hidden lg:block xl:left-14"
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.7, delay: 1.2, ease: EASE }}
+        >
+          <motion.div
+            className={`flex items-center gap-3 rounded-2xl px-4 py-3 ${glass}`}
+            animate={reduce ? undefined : { y: [0, -8, 0] }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          >
+            <span className="relative flex size-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#ff7a1a] opacity-75" />
+              <span className="relative inline-flex size-2.5 rounded-full bg-[#ff7a1a]" />
+            </span>
+            <div>
+              <p className="text-[12.5px] font-semibold text-[#0f2a4a]">
+                Live tracking
+              </p>
+              <p className="text-[11px] text-[#475569]">
+                Every parcel, pickup to doorstep
               </p>
             </div>
+          </motion.div>
+        </motion.div>
 
-            {/* Copyright */}
-            <p className="relative z-10 pb-6 text-center text-[11px] text-white/70">
-              Copyright © {new Date().getFullYear()} SwiftShip. All rights
-              reserved.
-            </p>
-          </div>
-
-          {/*  RIGHT PANEL  */}
-          <div className="flex w-full flex-col bg-[#f7f9fc] lg:w-[45%]">
-            <div className="flex flex-1 flex-col items-center justify-center px-6 py-10 sm:px-12">
-              {/* Form Card */}
-              <div className="w-full max-w-[340px] rounded-2xl bg-white p-8 shadow-[0_8px_30px_rgb(0,0,0,0.06)]">
-                {/* Tabs */}
-                <div className="mb-7 flex items-center gap-6">
-                  <Link
-                    href="/register"
-                    className="pb-2 text-[15px] font-medium text-[#94a3b8] transition hover:text-[#64748b]"
-                  >
-                    Sign Up
-                  </Link>
-                  <Link
-                    href="/login"
-                    className="relative pb-2 text-[15px] font-semibold text-[#0f2a4a]"
-                  >
-                    Sign In
-                    <span className="absolute bottom-0 left-0 h-[3px] w-full rounded-full bg-[#ff7a1a]" />
-                  </Link>
-                </div>
-
-                <LoginForm />
-              </div>
-            </div>
-
-            {/* Bottom social + contact */}
-            <div className="pb-8 pt-2">
-              <div className="mb-5 flex justify-center gap-5">
-                {socialIcons.map(({ name, Icon }) => (
-                  <Link
-                    key={name}
-                    href="#"
-                    className="text-[#94a3b8] transition hover:text-[#ff7a1a]"
-                  >
-                    <Icon className="h-[18px] w-[18px]" />
-                  </Link>
-                ))}
-              </div>
-
-              <div className="flex flex-col items-center gap-1.5 text-[12px] text-[#94a3b8] sm:flex-row sm:justify-center sm:gap-6">
-                <div className="flex items-center gap-1.5">
-                  <HiOutlinePhone className="h-3.5 w-3.5" />
-                  <span>+880 1700-000000</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <HiOutlineMail className="h-3.5 w-3.5" />
-                  <span>support@swiftship.com</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Footer */}
+        <motion.footer
+          className="pb-5 text-center text-[11px] font-medium text-[#334155]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 1.4 }}
+        >
+          Copyright © {new Date().getFullYear()} SwiftShip. All rights reserved.
+        </motion.footer>
       </div>
     </div>
   );

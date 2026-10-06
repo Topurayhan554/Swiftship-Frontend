@@ -8,10 +8,9 @@ import {
   FieldError,
   FieldGroup,
   FieldLabel,
-  FieldSeparator,
 } from "@/components/ui/field";
 import { useState } from "react";
-import { Eye, EyeClosed } from "lucide-react";
+import { ArrowRight, Eye, EyeClosed, Lock, Mail } from "lucide-react";
 import Link from "next/link";
 import { useLogin } from "@/hooks";
 import { useRouter } from "next/navigation";
@@ -20,6 +19,12 @@ import { Spinner } from "../ui/spinner";
 import { loginSchema } from "@/validation";
 // import GoogleLoginButton from "../modules/google-login/googleLoginButton";
 
+const inputClass =
+  "h-11 rounded-full border border-[#0f2a4a]/15 bg-white/70 pl-11 pr-4 text-[14px] text-[#0f2a4a] shadow-none transition-all placeholder:text-[#64748b] focus-visible:border-[#ff7a1a] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-[#ff7a1a]/15";
+const labelClass = "pl-1 text-[12.5px] font-semibold text-[#0f2a4a]";
+const leftIconClass =
+  "pointer-events-none absolute left-4 top-1/2 size-[18px] -translate-y-1/2 text-[#64748b]";
+
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const { mutate: login, isPending: loginPending } = useLogin();
@@ -27,8 +32,8 @@ export default function LoginForm() {
 
   const form = useForm({
     defaultValues: {
-      email: "topurayhantipu@gmail.com",
-      password: "@User123",
+      email: "",
+      password: "",
     },
     validators: {
       onSubmit: loginSchema,
@@ -61,29 +66,27 @@ export default function LoginForm() {
   });
 
   return (
-    <div>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          form.handleSubmit();
-        }}
-        className="space-y-4"
-      >
-        <FieldGroup className="gap-3">
-          {/* Email */}
-          <form.Field name="email">
-            {(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        form.handleSubmit();
+      }}
+      className="space-y-5"
+    >
+      <FieldGroup className="gap-4">
+        {/* Email */}
+        <form.Field name="email">
+          {(field) => {
+            const isInvalid =
+              field.state.meta.isTouched && !field.state.meta.isValid;
 
-              return (
-                <Field data-invalid={isInvalid}>
-                  <FieldLabel
-                    htmlFor={field.name}
-                    className="text-[13px] font-medium text-[#334155]"
-                  >
-                    Email
-                  </FieldLabel>
+            return (
+              <Field data-invalid={isInvalid}>
+                <FieldLabel htmlFor={field.name} className={labelClass}>
+                  Email
+                </FieldLabel>
+                <div className="relative">
+                  <Mail className={leftIconClass} />
                   <Input
                     id={field.name}
                     name={field.name}
@@ -92,114 +95,115 @@ export default function LoginForm() {
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
-                    autoComplete="off"
+                    autoComplete="email"
                     aria-invalid={isInvalid}
-                    className="h-9 border-0 border-b border-[#e2e8f0] rounded-none px-0 shadow-none focus-visible:ring-0 focus-visible:border-[#ff7a1a] placeholder:text-[#94a3b8]"
+                    className={inputClass}
                   />
-                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                </Field>
-              );
-            }}
-          </form.Field>
+                </div>
+                {isInvalid && <FieldError errors={field.state.meta.errors} />}
+              </Field>
+            );
+          }}
+        </form.Field>
 
-          {/* Password */}
-          <form.Field name="password">
-            {(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+        {/* Password */}
+        <form.Field name="password">
+          {(field) => {
+            const isInvalid =
+              field.state.meta.isTouched && !field.state.meta.isValid;
 
-              return (
-                <Field data-invalid={isInvalid}>
-                  <FieldLabel
-                    htmlFor={field.name}
-                    className="text-[13px] font-medium text-[#334155]"
+            return (
+              <Field data-invalid={isInvalid}>
+                <FieldLabel htmlFor={field.name} className={labelClass}>
+                  Password
+                </FieldLabel>
+                <div className="relative">
+                  <Lock className={leftIconClass} />
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    autoComplete="current-password"
+                    aria-invalid={isInvalid}
+                    className={`${inputClass} pr-11`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((p) => !p)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748b] transition hover:text-[#0f2a4a]"
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
                   >
-                    Password
-                  </FieldLabel>
-                  <div className="relative">
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      type={showPassword ? "text" : "password"}
-                      placeholder="••••••••"
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
-                      autoComplete="off"
-                      aria-invalid={isInvalid}
-                      className="h-9 border-0 border-b border-[#e2e8f0] rounded-none px-0 pr-8 shadow-none focus-visible:ring-0 focus-visible:border-[#ff7a1a] placeholder:text-[#94a3b8]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((p) => !p)}
-                      className="absolute right-0 top-1/2 -translate-y-1/2 text-[#94a3b8] hover:text-[#64748b]"
-                    >
-                      {showPassword ? (
-                        <EyeClosed className="size-4" />
-                      ) : (
-                        <Eye className="size-4" />
-                      )}
-                    </button>
-                  </div>
-                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                </Field>
-              );
-            }}
-          </form.Field>
-        </FieldGroup>
+                    {showPassword ? (
+                      <EyeClosed className="size-4" />
+                    ) : (
+                      <Eye className="size-4" />
+                    )}
+                  </button>
+                </div>
+                {isInvalid && <FieldError errors={field.state.meta.errors} />}
+              </Field>
+            );
+          }}
+        </form.Field>
+      </FieldGroup>
 
-        {/* Remember me + Forgot password */}
-        <div className="flex items-center justify-between text-[13px]">
-          <label className="flex items-center gap-2 text-[#64748b]">
-            <input
-              type="checkbox"
-              className="size-3.5 rounded border-[#cbd5e1] accent-[#ff7a1a]"
-            />
-            Remember me
-          </label>
-          <Link
-            href="/forgot-password"
-            className="font-medium text-[#ff7a1a] hover:underline"
-          >
-            Forgot password?
-          </Link>
-        </div>
-
-        {/* Sign In Button */}
-        <Button
-          disabled={loginPending}
-          type="submit"
-          className="mt-1 h-10 w-full rounded-lg bg-[#0f2a4a] text-[15px] font-medium text-white hover:bg-[#143a63] shadow-md shadow-[#0f2a4a]/20"
+      {/* Remember me + Forgot password */}
+      <div className="flex items-center justify-between px-1 text-[12.5px]">
+        <label className="flex cursor-pointer items-center gap-2 text-[#334155]">
+          <input
+            type="checkbox"
+            className="size-3.5 rounded border-[#cbd5e1] accent-[#ff7a1a]"
+          />
+          Remember me
+        </label>
+        <Link
+          href="/forgot-password"
+          className="font-semibold text-[#ff7a1a] hover:underline"
         >
-          {loginPending ? (
-            <>
-              <Spinner /> Signing in
-            </>
-          ) : (
-            "Sign In"
-          )}
-        </Button>
-      </form>
+          Forgot password?
+        </Link>
+      </div>
 
-      <FieldSeparator className="mt-2">Or continue with</FieldSeparator>
-      {/* <div className="mt-4">
-        <GoogleLoginButton
-          successTitle="Logged In Successfully"
-          successDescription="Welcome back to SwiftShip!"
-          redirectTo="/"
-        />
-      </div> */}
+      {/* Sign In Button */}
+      <Button
+        disabled={loginPending}
+        type="submit"
+        className="group h-12 w-full rounded-full bg-gradient-to-r from-[#ff7a1a] to-[#ff9a4d] text-[15px] font-semibold text-white shadow-lg shadow-[#ff7a1a]/35 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[#ff7a1a]/45 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
+      >
+        {loginPending ? (
+          <span className="flex items-center justify-center gap-2">
+            <Spinner /> Signing in...
+          </span>
+        ) : (
+          <span className="flex items-center justify-center gap-2">
+            Sign In
+            <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+          </span>
+        )}
+      </Button>
 
-      {/* Footer link */}
-      <p className="mt-5 text-center text-[13px] text-[#64748b]">
+      {/* Google login (enable later, then add a FieldSeparator above it)
+      <GoogleLoginButton
+        successTitle="Logged In Successfully"
+        successDescription="Welcome back to SwiftShip!"
+        redirectTo="/"
+      /> */}
+
+      <p className="text-center text-[13px] text-[#334155]">
         Don&apos;t have an account?{" "}
         <Link
           href="/register"
-          className="font-medium text-[#ff7a1a] hover:underline"
+          className="font-semibold text-[#ff7a1a] hover:underline"
         >
           Sign Up
         </Link>
       </p>
-    </div>
+    </form>
   );
 }
