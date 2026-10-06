@@ -10,16 +10,30 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
-export function useLogin() {
+const USER_KEY = ["user"];
+
+function useAfterLogin() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
+  return async () => {
+    await queryClient.fetchQuery({
+      queryKey: USER_KEY,
+      queryFn: getMe,
+      staleTime: 0,
+    });
+
+    router.push("/");
+    router.refresh();
+  };
+}
+
+export function useLogin() {
+  const afterLogin = useAfterLogin();
+
   return useMutation({
     mutationFn: userLogin,
-    onSuccess: (data) => {
-      queryClient.setQueryData(["user"], data.data.user);
-      router.push("/user");
-    },
+    onSuccess: afterLogin,
   });
 }
 
@@ -47,30 +61,26 @@ export function useLogout() {
 
   return useMutation({
     mutationFn: userLogout,
-    onSuccess: () => {
-      queryClient.setQueryData(["user"], null);
+    onSettled: () => {
       queryClient.clear();
       router.push("/login");
+      router.refresh();
     },
   });
 }
 
 export function useGoogleOAuth() {
-  const router = useRouter();
-  const queryClient = useQueryClient();
+  const afterLogin = useAfterLogin();
 
   return useMutation({
     mutationFn: googleOAuth,
-    onSuccess: (data) => {
-      queryClient.setQueryData(["user"], data.data.user);
-      router.push("/user");
-    },
+    onSuccess: afterLogin,
   });
 }
 
 export function useGetMe() {
   return useQuery({
-    queryKey: ["user"],
+    queryKey: USER_KEY,
     queryFn: getMe,
     retry: false,
   });
