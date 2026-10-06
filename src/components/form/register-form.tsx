@@ -8,6 +8,7 @@ import {
   FieldError,
   FieldGroup,
   FieldLabel,
+  FieldSeparator,
 } from "@/components/ui/field";
 import { useState } from "react";
 import { Bike, Eye, EyeClosed, Loader2, User } from "lucide-react";
@@ -17,6 +18,7 @@ import { signupSchema, type Role } from "@/validation";
 import { useRegistration } from "@/hooks";
 import { toast } from "../ui/toast";
 import { useRouter } from "next/navigation";
+import GoogleLoginButton from "../modules/google-login/googleLoginButton";
 
 const ROLE_OPTIONS: { value: Role; label: string; icon: typeof User }[] = [
   { value: "CUSTOMER", label: "Customer", icon: User },
@@ -333,7 +335,6 @@ export default function RegisterForm() {
             }}
           </form.Field>
         </FieldGroup>
-
         {/* Sign Up Button */}
         <form.Subscribe selector={(state) => state.isSubmitting}>
           {(isSubmitting) => {
@@ -356,8 +357,6 @@ export default function RegisterForm() {
             );
           }}
         </form.Subscribe>
-
-        {/* Google login (enable later, then re-add FieldSeparator) 
         <FieldSeparator className="mt-2">Or continue with</FieldSeparator>
         <div className="mt-4">
           <GoogleLoginButton
@@ -365,8 +364,7 @@ export default function RegisterForm() {
             successDescription="Welcome to SwiftShip!"
             redirectTo="/"
           />
-        </div> */}
-
+        </div>
         {/* Footer link */}
         <p className="mt-5 text-center text-[13px] text-[#64748b]">
           Already have an account?{" "}
@@ -377,7 +375,6 @@ export default function RegisterForm() {
             Sign In
           </Link>
         </p>
-
         <p className="text-center text-[11px] leading-relaxed text-[#94a3b8]">
           By creating an account you agree to our Terms & Privacy Policy.
         </p>

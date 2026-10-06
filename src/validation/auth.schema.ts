@@ -13,30 +13,42 @@ const BD_PHONE_REGEX = /^(?:\+?880|0)1[3-9]\d{8}$/;
 const emailField = z
   .string()
   .trim()
-  .min(1, "Email address is required.")
+  .min(1, { error: "Email address is required.", abort: true })
   .toLowerCase()
   .pipe(z.email("Please enter a valid email address."));
 
 const passwordField = z
   .string()
-  .min(1, "Password is required.")
-  .min(
-    PASSWORD_MIN,
-    `Password must be at least ${PASSWORD_MIN} characters long.`,
-  )
-  .max(PASSWORD_MAX, `Password must not exceed ${PASSWORD_MAX} characters.`)
-  .regex(/[a-z]/, "Password must contain at least one lowercase letter.")
-  .regex(/[A-Z]/, "Password must contain at least one uppercase letter.")
-  .regex(/[0-9]/, "Password must contain at least one number.")
-  .regex(
-    /[^A-Za-z0-9]/,
-    "Password must contain at least one special character.",
-  );
+  .min(1, { error: "Password is required.", abort: true })
+  .min(PASSWORD_MIN, {
+    error: `Password must be at least ${PASSWORD_MIN} characters long.`,
+    abort: true,
+  })
+  .max(PASSWORD_MAX, {
+    error: `Password must not exceed ${PASSWORD_MAX} characters.`,
+    abort: true,
+  })
+  .regex(/[a-z]/, {
+    error: "Password must contain at least one lowercase letter.",
+    abort: true,
+  })
+  .regex(/[A-Z]/, {
+    error: "Password must contain at least one uppercase letter.",
+    abort: true,
+  })
+  .regex(/[0-9]/, {
+    error: "Password must contain at least one number.",
+    abort: true,
+  })
+  .regex(/[^A-Za-z0-9]/, {
+    error: "Password must contain at least one special character.",
+    abort: true,
+  });
 
 const phoneField = z
   .string()
   .trim()
-  .min(1, "Phone number is required.")
+  .min(1, { error: "Phone number is required.", abort: true })
   .transform((val) => val.replace(/[\s-]/g, ""))
   .pipe(
     z
@@ -56,22 +68,36 @@ export const signupSchema = z
     fullName: z
       .string()
       .trim()
-      .min(1, "Full name is required.")
-      .min(NAME_MIN, `Full name must be at least ${NAME_MIN} characters long.`)
-      .max(NAME_MAX, `Full name must not exceed ${NAME_MAX} characters.`)
-      .regex(
-        /^[\p{L}][\p{L}\s.'-]*$/u,
-        "Full name can only contain letters, spaces, dots, hyphens and apostrophes.",
-      ),
+      .min(1, { error: "Full name is required.", abort: true })
+      .min(NAME_MIN, {
+        error: `Full name must be at least ${NAME_MIN} characters long.`,
+        abort: true,
+      })
+      .max(NAME_MAX, {
+        error: `Full name must not exceed ${NAME_MAX} characters.`,
+        abort: true,
+      })
+      .regex(/^[\p{L}][\p{L}\s.'-]*$/u, {
+        error:
+          "Full name can only contain letters, spaces, dots, hyphens and apostrophes.",
+        abort: true,
+      }),
     email: emailField,
     phoneNumber: phoneField,
     password: passwordField,
-    confirmPassword: z.string().min(1, "Please confirm your password."),
+    confirmPassword: z
+      .string()
+      .min(1, { error: "Please confirm your password.", abort: true }),
   })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match.",
-    path: ["confirmPassword"],
-  });
+  .refine(
+    // empty confirm already has its own message, so skip the mismatch error
+    (data) =>
+      data.confirmPassword === "" || data.password === data.confirmPassword,
+    {
+      message: "Passwords do not match.",
+      path: ["confirmPassword"],
+    },
+  );
 
 export type LoginFormValues = z.input<typeof loginSchema>;
 export type LoginPayload = z.output<typeof loginSchema>;

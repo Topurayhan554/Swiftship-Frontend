@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "../ui/toast";
 import { Spinner } from "../ui/spinner";
 import { loginSchema } from "@/validation";
+import GoogleLoginButton from "../modules/google-login/googleLoginButton";
 // import GoogleLoginButton from "../modules/google-login/googleLoginButton";
 
 const inputClass =
@@ -152,7 +153,6 @@ export default function LoginForm() {
           }}
         </form.Field>
       </FieldGroup>
-
       {/* Remember me + Forgot password */}
       <div className="flex items-center justify-between px-1 text-[12.5px]">
         <label className="flex cursor-pointer items-center gap-2 text-[#334155]">
@@ -169,7 +169,6 @@ export default function LoginForm() {
           Forgot password?
         </Link>
       </div>
-
       {/* Sign In Button */}
       <Button
         disabled={loginPending}
@@ -187,14 +186,11 @@ export default function LoginForm() {
           </span>
         )}
       </Button>
-
-      {/* Google login (enable later, then add a FieldSeparator above it)
       <GoogleLoginButton
         successTitle="Logged In Successfully"
         successDescription="Welcome back to SwiftShip!"
         redirectTo="/"
-      /> */}
-
+      />
       <p className="text-center text-[13px] text-[#334155]">
         Don&apos;t have an account?{" "}
         <Link

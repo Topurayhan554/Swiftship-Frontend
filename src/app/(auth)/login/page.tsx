@@ -17,7 +17,6 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-white">
-      {/* Background image with slow ken-burns */}
       <motion.div
         className="absolute inset-0"
         initial={{ scale: 1 }}
