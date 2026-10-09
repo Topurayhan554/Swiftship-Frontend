@@ -76,7 +76,7 @@ const glass =
   "bg-white/30 ring-1 ring-white/70 backdrop-blur-[6px] shadow-xl shadow-[#0f2a4a]/10";
 const tile = "bg-white/40 ring-1 ring-white/70";
 
-const ROW = 30; 
+const ROW = 30;
 const NODE = 20;
 
 function CountUp({
@@ -254,7 +254,6 @@ export default function RegisterPage() {
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-white">
-      
       <motion.div
         className="absolute inset-0"
         initial={{ scale: 1 }}
@@ -328,7 +327,7 @@ export default function RegisterPage() {
               ))}
             </div>
 
-            {/* Perks (compact tiles) */}
+            {/* Perks*/}
             <div className="mt-5 grid grid-cols-3 gap-2.5">
               {perks.map(({ icon: Icon, title, desc }, i) => (
                 <motion.div
@@ -360,9 +359,9 @@ export default function RegisterPage() {
 
           {/* RIGHT: form card */}
           <div className="relative w-full max-w-[420px]">
-            {/* Floating chips (big screens only) */}
+            {/* Floating chips */}
             <motion.div
-              className="absolute -left-16 top-10 z-20 hidden items-center gap-2 rounded-xl bg-white px-3 py-2 text-[12px] font-medium text-[#0f2a4a] shadow-xl xl:flex"
+              className="absolute -left-16 -top-2 z-20 hidden items-center gap-2 rounded-xl bg-white px-3 py-2 text-[12px] font-medium text-[#0f2a4a] shadow-xl xl:flex"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={
                 reduce
@@ -380,7 +379,7 @@ export default function RegisterPage() {
             </motion.div>
 
             <motion.div
-              className="absolute -right-10 bottom-24 z-20 hidden items-center gap-2 rounded-xl bg-[#0f2a4a] px-3 py-2 text-[12px] font-medium text-white shadow-xl ring-1 ring-white/20 xl:flex"
+              className="absolute -right-12 -bottom-5 z-20 hidden items-center gap-2 rounded-xl bg-[#0f2a4a] px-3 py-2 text-[12px] font-medium text-white shadow-xl ring-1 ring-white/20 xl:flex"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={
                 reduce

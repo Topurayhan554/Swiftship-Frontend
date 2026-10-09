@@ -95,21 +95,6 @@ export default function RegisterForm() {
   return (
     <>
       {/* Tabs */}
-      <div className="mb-6 flex items-center gap-6">
-        <Link
-          href="/register"
-          className="relative pb-2 text-[15px] font-semibold text-[#0f2a4a]"
-        >
-          Sign Up
-          <span className="absolute bottom-0 left-0 h-[3px] w-full rounded-full bg-[#ff7a1a]" />
-        </Link>
-        <Link
-          href="/login"
-          className="pb-2 text-[15px] font-medium text-[#94a3b8] transition hover:text-[#64748b]"
-        >
-          Sign In
-        </Link>
-      </div>
 
       <form
         onSubmit={(e) => {
