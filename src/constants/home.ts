@@ -14,11 +14,11 @@ export const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/services", label: "Services" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/track", label: "Tracking" },
+  { href: "/track", label: "Track Parcel" },
+  { href: "/reviews", label: "Reviews" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ];
-
 type Feature = { icon: LucideIcon; title: string; text: string };
 
 export const FEATURES: Feature[] = [
@@ -45,50 +45,46 @@ export const SERVICES = [
     icon: FileText,
     title: "Document Delivery",
     text: "Important documents, delivered safely.",
-    image: "/images/services/document.jpg",
+    image: "/document.jpg",
     href: "/services#document",
   },
   {
     icon: Package,
     title: "Parcel Delivery",
     text: "Small or large parcels, we deliver it all.",
-    image: "/images/services/parcel.jpg",
+    image: "/parcel.jpg",
     href: "/services#parcel",
   },
   {
     icon: Timer,
     title: "Express Delivery",
     text: "When it's urgent, we go faster.",
-    image: "/images/services/express.jpg",
+    image: "/express.jpg",
     href: "/services#express",
   },
   {
     icon: Globe2,
     title: "International Delivery",
     text: "Global shipping to 200+ countries.",
-    image: "/images/services/international.jpg",
+    image: "/international.jpg",
     href: "/services#international",
   },
 ];
 
 export const DESTINATIONS = [
-  { country: "USA", price: "$12.99", image: "/images/destinations/usa.jpg" },
-  { country: "UK", price: "$14.99", image: "/images/destinations/uk.jpg" },
+  { city: "Dhaka", price: "৳60", image: "/dhaka.jpg" },
   {
-    country: "Canada",
-    price: "$13.99",
-    image: "/images/destinations/canada.jpg",
+    city: "Chattogram",
+    price: "৳100",
+    image: "/chattogram.jpg",
   },
+  { city: "Sylhet", price: "৳120", image: "/sylhet.jpg" },
   {
-    country: "France",
-    price: "$16.99",
-    image: "/images/destinations/france.jpg",
+    city: "Rajshahi",
+    price: "৳110",
+    image: "/rajshahi.jpg",
   },
-  {
-    country: "Germany",
-    price: "$15.99",
-    image: "/images/destinations/germany.jpg",
-  },
+  { city: "Khulna", price: "৳110", image: "/khulna.jpg" },
 ];
 
 export const FOOTER_QUICK_LINKS = NAV_LINKS.map(({ href, label }) => ({
