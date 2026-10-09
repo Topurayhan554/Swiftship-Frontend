@@ -7,7 +7,6 @@ type Props = {
   className?: string;
 };
 
-// Swap the icon with your own <Logo /> if you already have a brand asset.
 export default function BrandMark({
   tagline = false,
   invert = false,

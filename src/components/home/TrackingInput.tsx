@@ -17,7 +17,6 @@ export default function TrackingInput() {
   return (
     <form
       onSubmit={onSubmit}
-      role="search"
       className="flex w-full max-w-md items-center gap-2 rounded-full bg-white p-1.5 pl-5 shadow-[0_10px_30px_rgba(238,123,34,0.15)] ring-1 ring-black/5 focus-within:ring-2 focus-within:ring-[#ee7b22]"
     >
       <MapPin aria-hidden="true" className="size-4 shrink-0 text-[#1a1c20]" />
