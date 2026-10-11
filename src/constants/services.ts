@@ -38,7 +38,7 @@ export const SERVICE_DETAILS: ServiceDetail[] = [
     ],
     time: "Same day – 24 hrs",
     from: "$4.99",
-    image: "/images/services/document.jpg",
+    image: "/images/services/document1.jpg",
   },
   {
     id: "parcel",
@@ -72,7 +72,7 @@ export const SERVICE_DETAILS: ServiceDetail[] = [
     ],
     time: "Within 4 hrs",
     from: "$14.99",
-    image: "/images/services/express.jpg",
+    image: "/images/services/express1.jpg",
   },
   {
     id: "international",
