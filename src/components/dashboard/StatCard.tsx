@@ -33,20 +33,26 @@ export default function StatCard({
 
   return (
     <motion.div
-      whileHover={reduce ? undefined : { y: -4 }}
-      transition={{ type: "spring", stiffness: 300, damping: 22 }}
-      className="group rounded-2xl bg-white p-5 shadow-[0_6px_24px_rgba(15,42,74,0.06)] ring-1 ring-black/5 transition-shadow hover:shadow-[0_14px_32px_rgba(255,122,26,0.15)]"
+      whileHover={reduce ? undefined : { y: -2 }}
+      transition={{ type: "spring", stiffness: 300, damping: 24 }}
+      className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
     >
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-[#64748b]">{label}</p>
-        <span className="flex size-10 items-center justify-center rounded-full bg-[#ffe6d1] text-[#0f2a4a] transition-all duration-300 group-hover:scale-110 group-hover:bg-[#ff7a1a] group-hover:text-white">
+      <div className="mb-4 flex items-center justify-between">
+        <span className="flex size-10 items-center justify-center rounded-lg bg-[#0f2a4a]/5 text-[#0f2a4a] dark:bg-slate-800 dark:text-slate-200">
           <Icon aria-hidden="true" className="size-5" strokeWidth={1.8} />
         </span>
       </div>
-      <p className="mt-3 text-3xl font-extrabold tracking-tight text-[#0f2a4a]">
+      <p className="mb-1 text-sm font-medium text-slate-500 dark:text-slate-400">
+        {label}
+      </p>
+      <p className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
         {shown}
       </p>
-      {hint && <p className="mt-1 text-xs text-[#94a3b8]">{hint}</p>}
+      {hint && (
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-500">
+          {hint}
+        </p>
+      )}
     </motion.div>
   );
 }

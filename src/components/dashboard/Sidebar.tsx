@@ -3,21 +3,23 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { X } from "lucide-react";
+import { ChevronsRight, X } from "lucide-react";
 import Logo from "@/components/shared/Logo";
 import type { NavItem } from "@/constants/dashboard";
 
 function NavList({
   nav,
+  collapsed = false,
   onNavigate,
 }: {
   nav: NavItem[];
+  collapsed?: boolean;
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Dashboard" className="flex-1 space-y-1 px-3">
+    <nav aria-label="Dashboard" className="flex-1 space-y-1 px-2">
       {nav.map(({ href, label, icon: Icon, exact }) => {
         const active = exact ? pathname === href : pathname.startsWith(href);
         return (
@@ -25,28 +27,20 @@ function NavList({
             key={href}
             href={href}
             onClick={onNavigate}
+            title={collapsed ? label : undefined}
             aria-current={active ? "page" : undefined}
-            className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff7a1a] ${
+            className={`relative flex h-11 items-center rounded-md border-l-2 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ee7b22] ${
               active
-                ? "text-white"
-                : "text-white/65 hover:bg-white/5 hover:text-white"
+                ? "border-[#ee7b22] bg-slate-100 text-[#0f2a4a] dark:bg-slate-800 dark:text-white"
+                : "border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-slate-100"
             }`}
           >
-            {active && (
-              <motion.span
-                layoutId="sidebar-active"
-                className="absolute inset-0 rounded-xl bg-white/10 ring-1 ring-white/10"
-                transition={{ type: "spring", stiffness: 420, damping: 34 }}
-              />
+            <span className="grid h-full w-11 shrink-0 place-content-center">
+              <Icon aria-hidden="true" className="size-[18px]" />
+            </span>
+            {!collapsed && (
+              <span className="truncate text-sm font-medium">{label}</span>
             )}
-            {active && (
-              <span className="absolute left-0 top-2 h-[calc(100%-1rem)] w-1 rounded-r-full bg-[#ff7a1a]" />
-            )}
-            <Icon
-              aria-hidden="true"
-              className={`relative size-[18px] ${active ? "text-[#ff7a1a]" : ""}`}
-            />
-            <span className="relative">{label}</span>
           </Link>
         );
       })}
@@ -54,16 +48,54 @@ function NavList({
   );
 }
 
-function Brand() {
+function Brand({ collapsed = false }: { collapsed?: boolean }) {
   return (
-    <div className="flex items-center gap-3 px-5 py-5">
-      <span className="rounded-xl bg-white p-1.5">
+    <div className="mb-4 flex items-center gap-3 border-b border-slate-200 px-3 py-4 dark:border-slate-800">
+      <span className="grid size-10 shrink-0 place-content-center rounded-lg bg-white ring-1 ring-slate-200 dark:ring-0">
         <Logo className="h-8 w-8" />
       </span>
-      <span className="text-lg font-bold tracking-tight text-white">
-        SwiftShip
-      </span>
+      {!collapsed && (
+        <div className="min-w-0 leading-tight">
+          <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">
+            SwiftShip
+          </span>
+          <span className="block text-[10px] font-semibold tracking-[0.18em] text-[#ee7b22]">
+            DASHBOARD
+          </span>
+        </div>
+      )}
     </div>
+  );
+}
+
+function ToggleClose({
+  collapsed,
+  onToggle,
+}: {
+  collapsed: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+      className="flex items-center border-t border-slate-200 p-2 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ee7b22] dark:border-slate-800 dark:hover:bg-slate-800/60"
+    >
+      <span className="grid size-12 shrink-0 place-content-center">
+        <ChevronsRight
+          aria-hidden="true"
+          className={`size-4 text-slate-500 transition-transform duration-300 dark:text-slate-400 ${
+            collapsed ? "" : "rotate-180"
+          }`}
+        />
+      </span>
+      {!collapsed && (
+        <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
+          Hide
+        </span>
+      )}
+    </button>
   );
 }
 
@@ -71,20 +103,26 @@ export default function Sidebar({
   nav,
   open,
   onClose,
+  collapsed,
+  onToggleCollapse,
 }: {
   nav: NavItem[];
   open: boolean;
   onClose: () => void;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }) {
   return (
     <>
       {/* Desktop */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-[#0f2a4a] lg:flex">
-        <Brand />
-        <NavList nav={nav} />
-        <p className="px-5 py-4 text-[11px] text-white/40">
-          &copy; {new Date().getFullYear()} SwiftShip
-        </p>
+      <aside
+        className={`fixed inset-y-0 left-0 z-30 hidden flex-col border-r border-slate-200 bg-white transition-[width] duration-300 ease-in-out dark:border-slate-800 dark:bg-slate-900 lg:flex ${
+          collapsed ? "w-16" : "w-64"
+        }`}
+      >
+        <Brand collapsed={collapsed} />
+        <NavList nav={nav} collapsed={collapsed} />
+        <ToggleClose collapsed={collapsed} onToggle={onToggleCollapse} />
       </aside>
 
       {/* Mobile drawer */}
@@ -93,7 +131,7 @@ export default function Sidebar({
           <>
             <motion.div
               key="backdrop"
-              className="fixed inset-0 z-40 bg-[#0f2a4a]/50 backdrop-blur-sm lg:hidden"
+              className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm lg:hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -102,19 +140,19 @@ export default function Sidebar({
             />
             <motion.aside
               key="drawer"
-              className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-[#0f2a4a] lg:hidden"
+              className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:hidden"
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", stiffness: 320, damping: 34 }}
             >
-              <div className="flex items-center justify-between pr-3">
+              <div className="relative">
                 <Brand />
                 <button
                   type="button"
                   onClick={onClose}
                   aria-label="Close menu"
-                  className="rounded-md p-2 text-white/70 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff7a1a]"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ee7b22] dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                 >
                   <X aria-hidden="true" className="size-5" />
                 </button>
