@@ -18,10 +18,12 @@ import { EASE } from "@/components/shared/motion";
 import { NAV_LINKS } from "@/constants/home";
 import { useGetMe, useLogout } from "@/hooks";
 
+// Adjust to your real dashboard routes.
 const DASHBOARD_ROUTES: Record<string, string> = {
   ADMIN: "/dashboard/admin",
-  SENDER: "/dashboard/sender",
-  RECEIVER: "/dashboard/receiver",
+  CUSTOMER: "/dashboard/customer",
+  USER: "/dashboard/customer",
+  COURIER: "/dashboard/courier",
 };
 
 const ring =
@@ -96,16 +98,8 @@ export default function Navbar() {
         <motion.div
           whileHover={reduce ? undefined : { scale: 1.05 }}
           whileTap={reduce ? undefined : { scale: 0.96 }}
-          className="flex shrink-0 items-center gap-2.5"
         >
           <Logo className="h-10 w-10" />
-          <Link
-            href="/"
-            aria-label="SwiftShip home"
-            className={`rounded-sm text-xl font-bold tracking-tight text-[#0f2a4a] ${ring}`}
-          >
-            Swift<span className="text-[#ff7a1a]">Ship</span>
-          </Link>
         </motion.div>
 
         <ul className="hidden items-center gap-7 lg:flex">
