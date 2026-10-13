@@ -9,6 +9,7 @@ import {
 } from "@/constants/dashboard";
 import { useGetMe } from "@/hooks";
 import GuardSpinner from "./guard-spinner";
+import AccessDenied from "./access-denied";
 
 export default function RoleGuard({
   roles,
@@ -18,15 +19,22 @@ export default function RoleGuard({
   children: ReactNode;
 }) {
   const router = useRouter();
-  const { data, isLoading } = useGetMe();
-  const role = normalizeRole(data?.data?.role);
+  const { data, isPending, isError } = useGetMe();
+
+  const user = data?.data;
+  const role = normalizeRole(user?.role);
+  const isLoggedOut = !isPending && (isError || !user);
   const allowed = !!role && roles.includes(role);
 
   useEffect(() => {
-    if (isLoading || !role) return;
-    if (!allowed) router.replace(ROLE_HOME[role]);
-  }, [isLoading, role, allowed, router]);
+    if (isLoggedOut) router.replace("/login");
+  }, [isLoggedOut, router]);
 
-  if (isLoading || !allowed) return <GuardSpinner />;
+  if (isPending || isLoggedOut) return <GuardSpinner />;
+
+  if (!allowed) {
+    return <AccessDenied href={role ? ROLE_HOME[role] : "/"} />;
+  }
+
   return <>{children}</>;
 }
