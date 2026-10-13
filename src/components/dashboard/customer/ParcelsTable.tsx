@@ -1,15 +1,31 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ExternalLink, PackagePlus, PackageSearch, Search } from "lucide-react";
+import {
+  CreditCard,
+  Eye,
+  ExternalLink,
+  Loader2,
+  PackagePlus,
+  PackageSearch,
+  Pencil,
+  Search,
+  XCircle,
+} from "lucide-react";
 import { EASE } from "@/components/shared/motion";
 import { SERVICE_RATES } from "@/constants/pricing";
-import { useMyParcels } from "@/lib/dashboard-queries";
+import { useMyParcels, usePayParcel } from "@/lib/dashboard-queries";
+import type { Parcel } from "@/types";
 import EmptyState from "../EmptyState";
 import PageHeader from "../PageHeader";
 import StatusBadge from "../StatusBadge";
+import {
+  CancelParcelModal,
+  EditParcelModal,
+  ViewParcelModal,
+} from "./ParcelModals";
 
 const FILTERS = [
   { key: "all", label: "All" },
@@ -25,6 +41,13 @@ const matchFilter = (status: string, f: FilterKey) =>
   (f === "cancelled" && (status === "CANCELLED" || status === "FAILED")) ||
   (f === "active" && !["DELIVERED", "CANCELLED", "FAILED"].includes(status));
 
+const canPay = (p: Parcel) =>
+  p.paymentStatus === "UNPAID" &&
+  p.status !== "CANCELLED" &&
+  p.status !== "FAILED";
+const canEdit = (p: Parcel) => p.status === "PENDING";
+const canCancel = (p: Parcel) => p.status === "PENDING";
+
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-GB", {
     day: "numeric",
@@ -32,10 +55,42 @@ const fmtDate = (iso: string) =>
     year: "numeric",
   });
 
+function IconButton({
+  label,
+  onClick,
+  danger,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  danger?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className={`rounded-lg p-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff7a1a] ${
+        danger
+          ? "text-red-500 hover:bg-red-50"
+          : "text-[#64748b] hover:bg-[#ff7a1a]/10 hover:text-[#e8590c]"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function ParcelsTable() {
   const { data: parcels, isLoading, isError, refetch } = useMyParcels();
+  const pay = usePayParcel();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<FilterKey>("all");
+  const [viewing, setViewing] = useState<Parcel | null>(null);
+  const [editing, setEditing] = useState<Parcel | null>(null);
+  const [cancelling, setCancelling] = useState<Parcel | null>(null);
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -64,6 +119,15 @@ export default function ParcelsTable() {
           </Link>
         }
       />
+
+      {pay.isError && (
+        <p
+          role="alert"
+          className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600"
+        >
+          Could not start the payment. Please try again.
+        </p>
+      )}
 
       <div className="rounded-2xl bg-white shadow-[0_6px_24px_rgba(15,42,74,0.06)] ring-1 ring-black/5">
         {/* Toolbar */}
@@ -157,7 +221,7 @@ export default function ParcelsTable() {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left text-sm">
+            <table className="w-full min-w-[980px] text-left text-sm">
               <caption className="sr-only">Your parcels</caption>
               <thead className="text-xs uppercase tracking-wider text-[#94a3b8]">
                 <tr>
@@ -186,7 +250,7 @@ export default function ParcelsTable() {
                     Status
                   </th>
                   <th scope="col" className="px-5 py-3">
-                    <span className="sr-only">Track</span>
+                    <span className="sr-only">Actions</span>
                   </th>
                 </tr>
               </thead>
@@ -194,6 +258,7 @@ export default function ParcelsTable() {
                 <AnimatePresence initial={false}>
                   {rows.map((p, i) => {
                     const Icon = SERVICE_RATES[p.service].icon;
+                    const paying = pay.isPending && pay.variables === p.id;
                     return (
                       <motion.tr
                         key={p.id}
@@ -252,18 +317,67 @@ export default function ParcelsTable() {
                         <td className="px-3 py-4">
                           <StatusBadge status={p.status} />
                         </td>
-                        <td className="px-5 py-4 text-right">
-                          <Link
-                            href={`/track/${p.trackingId}`}
-                            aria-label={`Track ${p.trackingId}`}
-                            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-[#e8590c] hover:bg-[#ff7a1a]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff7a1a]"
-                          >
-                            Track{" "}
-                            <ExternalLink
-                              aria-hidden="true"
-                              className="size-3.5"
-                            />
-                          </Link>
+                        <td className="px-5 py-4">
+                          <div className="flex items-center justify-end gap-1">
+                            {canPay(p) && (
+                              <button
+                                type="button"
+                                onClick={() => pay.mutate(p.id)}
+                                disabled={pay.isPending}
+                                className="mr-1 inline-flex items-center gap-1.5 rounded-full bg-[#ff7a1a] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#e8590c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff7a1a] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {paying ? (
+                                  <Loader2
+                                    aria-hidden="true"
+                                    className="size-3.5 animate-spin"
+                                  />
+                                ) : (
+                                  <CreditCard
+                                    aria-hidden="true"
+                                    className="size-3.5"
+                                  />
+                                )}
+                                Pay
+                              </button>
+                            )}
+                            <IconButton
+                              label={`View ${p.trackingId}`}
+                              onClick={() => setViewing(p)}
+                            >
+                              <Eye aria-hidden="true" className="size-4" />
+                            </IconButton>
+                            {canEdit(p) && (
+                              <IconButton
+                                label={`Edit ${p.trackingId}`}
+                                onClick={() => setEditing(p)}
+                              >
+                                <Pencil aria-hidden="true" className="size-4" />
+                              </IconButton>
+                            )}
+                            <Link
+                              href={`/track/${p.trackingId}`}
+                              aria-label={`Track ${p.trackingId}`}
+                              title="Track"
+                              className="rounded-lg p-1.5 text-[#64748b] transition-colors hover:bg-[#ff7a1a]/10 hover:text-[#e8590c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff7a1a]"
+                            >
+                              <ExternalLink
+                                aria-hidden="true"
+                                className="size-4"
+                              />
+                            </Link>
+                            {canCancel(p) && (
+                              <IconButton
+                                label={`Cancel ${p.trackingId}`}
+                                onClick={() => setCancelling(p)}
+                                danger
+                              >
+                                <XCircle
+                                  aria-hidden="true"
+                                  className="size-4"
+                                />
+                              </IconButton>
+                            )}
+                          </div>
                         </td>
                       </motion.tr>
                     );
@@ -274,6 +388,19 @@ export default function ParcelsTable() {
           </div>
         )}
       </div>
+
+      {viewing && (
+        <ViewParcelModal parcel={viewing} onClose={() => setViewing(null)} />
+      )}
+      {editing && (
+        <EditParcelModal parcel={editing} onClose={() => setEditing(null)} />
+      )}
+      {cancelling && (
+        <CancelParcelModal
+          parcel={cancelling}
+          onClose={() => setCancelling(null)}
+        />
+      )}
     </>
   );
 }

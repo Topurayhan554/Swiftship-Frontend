@@ -24,6 +24,14 @@ export type CreateParcelPayload = {
   description: string;
 };
 
+export type UpdateParcelPayload = {
+  description?: string;
+  pickupAddress?: string;
+  deliveryAddress?: string;
+  receiverName?: string;
+  receiverPhone?: string;
+};
+
 export type Parcel = {
   id: string;
   trackingId: string;
@@ -36,5 +44,6 @@ export type Parcel = {
   to: string;
   receiverName: string;
   receiverPhone: string;
+  description: string;
   createdAt: string;
 };

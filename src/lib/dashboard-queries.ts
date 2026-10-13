@@ -1,7 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createParcel, getMyParcels } from "@/api";
-import { mapParcel } from "@/lib/dashboard";
-import type { CreateParcelPayload, Parcel } from "@/types";
+import {
+  cancelParcel,
+  createParcel,
+  getMyParcels,
+  initiatePayment,
+  updateParcel,
+} from "@/api";
+import { mapParcel, type RawParcel } from "@/lib/dashboard";
+import type { CreateParcelPayload, Parcel, UpdateParcelPayload } from "@/types";
 
 export const PARCELS_KEY = ["my-parcels"];
 
@@ -11,7 +17,9 @@ export function useMyParcels() {
     queryFn: async () => {
       const res = await getMyParcels();
       const list = res?.data?.data ?? res?.data ?? [];
-      return (Array.isArray(list) ? list : []).map(mapParcel);
+      return (Array.isArray(list) ? list : []).map((p: RawParcel) =>
+        mapParcel(p),
+      );
     },
   });
 }
@@ -22,10 +30,43 @@ export function useCreateParcel() {
   return useMutation<Parcel, Error, CreateParcelPayload>({
     mutationFn: async (payload) => {
       const res = await createParcel(payload);
-      return mapParcel(res?.data ?? res);
+      return mapParcel((res?.data ?? res) as RawParcel);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PARCELS_KEY });
+    },
+  });
+}
+
+export function useUpdateParcel() {
+  const queryClient = useQueryClient();
+
+  return useMutation<unknown, Error, { id: string; data: UpdateParcelPayload }>(
+    {
+      mutationFn: ({ id, data }) => updateParcel(id, data),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: PARCELS_KEY });
+      },
+    },
+  );
+}
+
+export function useCancelParcel() {
+  const queryClient = useQueryClient();
+
+  return useMutation<unknown, Error, string>({
+    mutationFn: cancelParcel,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PARCELS_KEY });
+    },
+  });
+}
+
+export function usePayParcel() {
+  return useMutation<string, Error, string>({
+    mutationFn: initiatePayment,
+    onSuccess: (url) => {
+      window.location.assign(url);
     },
   });
 }

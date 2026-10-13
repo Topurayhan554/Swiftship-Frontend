@@ -5,7 +5,7 @@ import {
 } from "@/constants/pricing";
 import type { Parcel } from "@/types";
 
-type RawParcel = {
+export type RawParcel = {
   id: string;
   trackingId?: string;
   trackingNumber?: string;
@@ -29,6 +29,7 @@ type RawParcel = {
   to?: string;
   receiverName: string;
   receiverPhone: string;
+  description?: string | null;
   createdAt: string;
 };
 
@@ -93,6 +94,7 @@ export function mapParcel(raw: RawParcel): Parcel {
     to: raw.deliveryAddress ?? raw.delivery ?? raw.to ?? "",
     receiverName: raw.receiverName,
     receiverPhone: raw.receiverPhone,
+    description: raw.description ?? "",
     createdAt: raw.createdAt,
   };
 }
