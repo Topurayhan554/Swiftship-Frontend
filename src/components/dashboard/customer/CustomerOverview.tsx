@@ -14,11 +14,11 @@ import {
 import { EASE } from "@/components/shared/motion";
 import { SERVICE_RATES } from "@/constants/pricing";
 import { useGetMe } from "@/hooks";
-import { useMyParcels } from "@/lib/dashboard-queries";
 import EmptyState from "../EmptyState";
 import PageHeader from "../PageHeader";
 import StatCard from "../StatCard";
 import StatusBadge from "../StatusBadge";
+import { useMyParcels } from "@/hooks/useParcel";
 
 const ACTIVE = ["APPROVED", "ASSIGNED", "PICKED_UP", "IN_TRANSIT"];
 

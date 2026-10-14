@@ -1,11 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  cancelParcel,
-  createParcel,
-  getMyParcels,
-  initiatePayment,
-  updateParcel,
-} from "@/api";
+import { cancelParcel, createParcel, getMyParcels, updateParcel } from "@/api";
 import { mapParcel, type RawParcel } from "@/lib/dashboard";
 import type { CreateParcelPayload, Parcel, UpdateParcelPayload } from "@/types";
 
@@ -58,15 +52,6 @@ export function useCancelParcel() {
     mutationFn: cancelParcel,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PARCELS_KEY });
-    },
-  });
-}
-
-export function usePayParcel() {
-  return useMutation<string, Error, string>({
-    mutationFn: initiatePayment,
-    onSuccess: (url) => {
-      window.location.assign(url);
     },
   });
 }

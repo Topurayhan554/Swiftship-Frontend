@@ -11,8 +11,8 @@ import {
   type ServiceKey,
 } from "@/constants/pricing";
 import { estimatePrice } from "@/lib/dashboard";
-import { useCreateParcel } from "@/lib/dashboard-queries";
 import PageHeader from "../PageHeader";
+import { useCreateParcel } from "@/hooks/useParcel";
 
 type Values = {
   pickup: string;

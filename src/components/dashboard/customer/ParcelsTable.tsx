@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { EASE } from "@/components/shared/motion";
 import { SERVICE_RATES } from "@/constants/pricing";
-import { useMyParcels, usePayParcel } from "@/lib/dashboard-queries";
 import type { Parcel } from "@/types";
 import EmptyState from "../EmptyState";
 import PageHeader from "../PageHeader";
@@ -26,6 +25,8 @@ import {
   EditParcelModal,
   ViewParcelModal,
 } from "./ParcelModals";
+import { useMyParcels } from "@/hooks/useParcel";
+import { usePayParcel } from "@/hooks";
 
 const FILTERS = [
   { key: "all", label: "All" },

@@ -4,9 +4,9 @@ import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { Loader2, X } from "lucide-react";
 import { SERVICE_RATES } from "@/constants/pricing";
-import { useCancelParcel, useUpdateParcel } from "@/lib/dashboard-queries";
 import type { Parcel, UpdateParcelPayload } from "@/types";
 import StatusBadge from "../StatusBadge";
+import { useCancelParcel, useUpdateParcel } from "@/hooks/useParcel";
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-GB", {
