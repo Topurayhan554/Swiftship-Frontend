@@ -12,7 +12,7 @@ import {
   Truck,
 } from "lucide-react";
 import { EASE } from "@/components/shared/motion";
-import { SERVICE_RATES } from "@/constants/pricing";
+import { PARCEL_TYPES, canPay } from "@/lib/parcel";
 import { useGetMe } from "@/hooks";
 import EmptyState from "../EmptyState";
 import PageHeader from "../PageHeader";
@@ -31,10 +31,7 @@ export default function CustomerOverview() {
   const active = parcels?.filter((p) => ACTIVE.includes(p.status)).length ?? 0;
   const delivered =
     parcels?.filter((p) => p.status === "DELIVERED").length ?? 0;
-  const unpaid =
-    parcels?.filter(
-      (p) => p.paymentStatus === "UNPAID" && p.status !== "CANCELLED",
-    ).length ?? 0;
+  const unpaid = parcels?.filter(canPay).length ?? 0;
   const recent = parcels?.slice(0, 5) ?? [];
 
   return (
@@ -156,7 +153,9 @@ export default function CustomerOverview() {
           ) : (
             <ul className="divide-y divide-black/5">
               {recent.map((p, i) => {
-                const Icon = SERVICE_RATES[p.service].icon;
+                const Icon = (
+                  PARCEL_TYPES[p.parcelType] ?? PARCEL_TYPES.PACKAGE
+                ).icon;
                 return (
                   <motion.li
                     key={p.id}
@@ -180,7 +179,7 @@ export default function CustomerOverview() {
                           {p.trackingId} · {p.receiverName}
                         </p>
                         <p className="truncate text-xs text-[#64748b]">
-                          {p.from} → {p.to}
+                          {p.pickupAddress} → {p.deliveryAddress}
                         </p>
                       </div>
                       <StatusBadge status={p.status} />
@@ -201,7 +200,7 @@ export default function CustomerOverview() {
             <PackagePlus aria-hidden="true" className="size-7 text-[#ff7a1a]" />
             <h3 className="mt-3 text-base font-bold">Send a new parcel</h3>
             <p className="mt-1 text-sm text-white/70">
-              Pick a service, enter addresses and get an instant estimate.
+              Pick a parcel type, enter addresses and book in a minute.
             </p>
             <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#ff7a1a]">
               Book now{" "}

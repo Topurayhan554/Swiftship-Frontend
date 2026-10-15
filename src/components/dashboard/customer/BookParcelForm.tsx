@@ -1,18 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertCircle, CheckCircle2, Clock, Loader2, Send } from "lucide-react";
-import { EASE } from "@/components/shared/motion";
 import {
-  INTL_RATES,
-  SERVICE_RATES,
-  type ServiceKey,
-} from "@/constants/pricing";
-import { estimatePrice } from "@/lib/dashboard";
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  LocateFixed,
+  MapPin,
+  Send,
+} from "lucide-react";
+import { EASE } from "@/components/shared/motion";
+import { MAX_WEIGHT_KG, PARCEL_TYPES, formatFee } from "@/lib/parcel";
+import type { ParcelType } from "@/types";
 import PageHeader from "../PageHeader";
 import { useCreateParcel } from "@/hooks/useParcel";
+import { useGetMe } from "@/hooks";
 
 type Values = {
   pickup: string;
@@ -20,9 +25,14 @@ type Values = {
   receiverName: string;
   receiverPhone: string;
   description: string;
-  notes: string;
 };
 type Errors = Partial<Record<keyof Values | "weight", string>>;
+type Coords = { lat: number; lng: number };
+type Kind = "pickup" | "delivery";
+
+const FEE_BASE = 60;
+const FEE_PER_KG = 15;
+const estimateFee = (kg: number) => FEE_BASE + FEE_PER_KG * kg;
 
 const EMPTY: Values = {
   pickup: "",
@@ -30,9 +40,14 @@ const EMPTY: Values = {
   receiverName: "",
   receiverPhone: "",
   description: "",
-  notes: "",
 };
-const SERVICE_KEYS = Object.keys(SERVICE_RATES) as ServiceKey[];
+const NO_COORDS: Record<Kind, Coords | null> = { pickup: null, delivery: null };
+const NO_FLAGS: Record<Kind, boolean> = { pickup: false, delivery: false };
+const NO_MSGS: Record<Kind, string | undefined> = {
+  pickup: undefined,
+  delivery: undefined,
+};
+const TYPE_KEYS = Object.keys(PARCEL_TYPES) as ParcelType[];
 
 const inputClass = (error?: string) =>
   `w-full rounded-xl border bg-white px-4 text-sm text-[#0f2a4a] outline-none transition-colors placeholder:text-[#94a3b8] focus:ring-2 ${
@@ -40,6 +55,17 @@ const inputClass = (error?: string) =>
       ? "border-red-400 focus:border-red-400 focus:ring-red-200"
       : "border-[#e2e8f0] focus:border-[#ff7a1a] focus:ring-[#ff7a1a]/25"
   }`;
+
+async function geocode(address: string): Promise<Coords | null> {
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=bd&q=${encodeURIComponent(address)}`;
+  const res = await fetch(url, { headers: { Accept: "application/json" } });
+  if (!res.ok) throw new Error("Geocoding failed");
+  const data = (await res.json()) as { lat: string; lon: string }[];
+  if (!data[0]) return null;
+  const lat = Number(data[0].lat);
+  const lng = Number(data[0].lon);
+  return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+}
 
 function Field({
   id,
@@ -85,7 +111,63 @@ function Field({
   );
 }
 
-export default function BookParcelForm() {
+function LocationRow({
+  coords,
+  busy,
+  message,
+  onPin,
+  onUseMine,
+}: {
+  coords: Coords | null;
+  busy: boolean;
+  message?: string;
+  onPin: () => void;
+  onUseMine?: () => void;
+}) {
+  const btn =
+    "inline-flex items-center gap-1.5 rounded-full border border-black/10 px-3 py-1.5 text-xs font-medium text-[#0f2a4a] transition-colors hover:border-[#ff7a1a] hover:text-[#e8590c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff7a1a] disabled:cursor-not-allowed disabled:opacity-60";
+  return (
+    <div className="mt-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" onClick={onPin} disabled={busy} className={btn}>
+          {busy ? (
+            <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
+          ) : (
+            <MapPin aria-hidden="true" className="size-3.5" />
+          )}
+          Pin this address
+        </button>
+        {onUseMine && (
+          <button
+            type="button"
+            onClick={onUseMine}
+            disabled={busy}
+            className={btn}
+          >
+            <LocateFixed aria-hidden="true" className="size-3.5" />
+            Use my location
+          </button>
+        )}
+        {coords && (
+          <span
+            role="status"
+            className="inline-flex items-center gap-1 text-xs text-green-700"
+          >
+            <CheckCircle2 aria-hidden="true" className="size-3.5" />
+            Pinned: {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
+          </span>
+        )}
+      </div>
+      {message && !coords && (
+        <p role="status" className="mt-1.5 text-xs text-[#64748b]">
+          {message}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function BookParcelFormInner() {
   const {
     mutate: create,
     isPending,
@@ -94,24 +176,41 @@ export default function BookParcelForm() {
     reset: resetMutation,
     isSuccess,
   } = useCreateParcel();
+  const { data: me } = useGetMe();
 
-  const [service, setService] = useState<ServiceKey>("parcel");
-  const [country, setCountry] = useState(INTL_RATES[0].country);
+  const myName: string = me?.data?.name ?? "";
+  const myPhone: string =
+    (me?.data as unknown as { phone?: string | null } | undefined)?.phone ?? "";
+
+  const searchParams = useSearchParams();
+  const typeParam = searchParams.get("type")?.toUpperCase();
+  const initialType: ParcelType = TYPE_KEYS.includes(typeParam as ParcelType)
+    ? (typeParam as ParcelType)
+    : "PACKAGE";
+
+  const [parcelType, setParcelType] = useState<ParcelType>(initialType);
   const [weight, setWeight] = useState("1");
   const [values, setValues] = useState<Values>(EMPTY);
+  const [useMine, setUseMine] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const rate = SERVICE_RATES[service];
-  const intl = INTL_RATES.find((r) => r.country === country) ?? INTL_RATES[0];
+  const [coords, setCoords] = useState(NO_COORDS);
+  const [locating, setLocating] = useState(NO_FLAGS);
+  const [locMsg, setLocMsg] = useState(NO_MSGS);
+  const [resolving, setResolving] = useState(false);
+
   const weightNum = Number(weight);
-  const isIntl = service === "international";
+  const busy = isPending || resolving;
+  const weightValid =
+    !!weight &&
+    !Number.isNaN(weightNum) &&
+    weightNum > 0 &&
+    weightNum <= MAX_WEIGHT_KG;
 
   const errors: Errors = {};
   if (values.pickup.trim().length < 5)
     errors.pickup = "Enter the full pickup address.";
-  if (!isIntl && values.delivery.trim().length < 5)
-    errors.delivery = "Enter the full delivery address.";
-  if (isIntl && values.delivery.trim().length < 5)
+  if (values.delivery.trim().length < 5)
     errors.delivery = "Enter the full delivery address.";
   if (values.receiverName.trim().length < 2)
     errors.receiverName = "Enter the receiver's name.";
@@ -119,28 +218,88 @@ export default function BookParcelForm() {
     errors.receiverPhone = "Enter a valid phone number.";
   if (!weight || Number.isNaN(weightNum) || weightNum <= 0)
     errors.weight = "Enter the parcel weight.";
-  else if (weightNum > rate.maxKg)
-    errors.weight = `${rate.label} accepts up to ${rate.maxKg} kg.`;
-  if (values.description.trim().length < 3)
-    errors.description = "Briefly describe what you are sending.";
+  else if (weightNum > MAX_WEIGHT_KG)
+    errors.weight = `Maximum weight is ${MAX_WEIGHT_KG} kg.`;
+  if (values.description.trim() && values.description.trim().length < 3)
+    errors.description = "Description must be at least 3 characters.";
 
   const show = (k: keyof Errors) => (submitted ? errors[k] : undefined);
   const aria = (k: keyof Errors) => ({
     "aria-invalid": !!show(k),
     "aria-describedby": show(k) ? `${k}-error` : undefined,
   });
+
   const set =
     (k: keyof Values) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setValues((p) => ({ ...p, [k]: e.target.value }));
+      if (k === "receiverName" || k === "receiverPhone") setUseMine(false);
+      if (k === "pickup" || k === "delivery") {
+        setCoords((p) => ({ ...p, [k]: null }));
+        setLocMsg((p) => ({ ...p, [k]: undefined }));
+      }
+    };
 
-  const price =
-    weightNum > 0 && weightNum <= rate.maxKg
-      ? estimatePrice(service, weightNum, country)
-      : 0;
-  const time = isIntl ? intl.days : rate.time;
+  const toggleUseMine = (checked: boolean) => {
+    setUseMine(checked);
+    setValues((p) => ({
+      ...p,
+      receiverName: checked ? myName : "",
+      receiverPhone: checked ? myPhone : "",
+    }));
+  };
 
-  const onSubmit = (e: React.FormEvent) => {
+  const setBusy = (k: Kind, v: boolean) =>
+    setLocating((p) => ({ ...p, [k]: v }));
+  const setMsg = (k: Kind, v?: string) => setLocMsg((p) => ({ ...p, [k]: v }));
+
+  const pin = async (kind: Kind) => {
+    const address = values[kind].trim();
+    if (address.length < 5) {
+      setMsg(kind, "Enter the full address first.");
+      return;
+    }
+    setBusy(kind, true);
+    setMsg(kind, undefined);
+    try {
+      const c = await geocode(address);
+      if (c) setCoords((p) => ({ ...p, [kind]: c }));
+      else
+        setMsg(
+          kind,
+          "Could not find this address on the map. You can still book without a pin.",
+        );
+    } catch {
+      setMsg(kind, "Location lookup failed. You can still book without a pin.");
+    } finally {
+      setBusy(kind, false);
+    }
+  };
+
+  const useMyLocation = () => {
+    if (!navigator.geolocation) {
+      setMsg("pickup", "Your browser does not support location access.");
+      return;
+    }
+    setBusy("pickup", true);
+    setMsg("pickup", undefined);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCoords((p) => ({
+          ...p,
+          pickup: { lat: pos.coords.latitude, lng: pos.coords.longitude },
+        }));
+        setBusy("pickup", false);
+      },
+      () => {
+        setMsg("pickup", "Location permission denied or unavailable.");
+        setBusy("pickup", false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  };
+
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
     const first = (Object.keys(errors) as (keyof Errors)[])[0];
@@ -148,24 +307,45 @@ export default function BookParcelForm() {
       document.getElementById(first)?.focus();
       return;
     }
+
+    let { pickup, delivery } = coords;
+    if (!pickup || !delivery) {
+      setResolving(true);
+      const [p, d] = await Promise.all([
+        pickup ? pickup : geocode(values.pickup.trim()).catch(() => null),
+        delivery ? delivery : geocode(values.delivery.trim()).catch(() => null),
+      ]);
+      pickup = p;
+      delivery = d;
+      setCoords({ pickup, delivery });
+      setResolving(false);
+    }
+
     create({
-      service,
-      country: isIntl ? country : undefined,
-      weight: weightNum,
-      notes: values.notes.trim() || undefined,
-      pickup: values.pickup.trim(),
-      delivery: values.delivery.trim(),
+      parcelType,
+      weightKg: weightNum,
+      pickupAddress: values.pickup.trim(),
+      pickupLat: pickup?.lat,
+      pickupLng: pickup?.lng,
+      deliveryAddress: values.delivery.trim(),
+      deliveryLat: delivery?.lat,
+      deliveryLng: delivery?.lng,
       receiverName: values.receiverName.trim(),
       receiverPhone: values.receiverPhone.trim(),
-      description: values.description.trim(),
+      description: values.description.trim() || undefined,
     });
   };
 
   const bookAnother = () => {
     resetMutation();
     setValues(EMPTY);
+    setParcelType(initialType);
     setWeight("1");
+    setUseMine(false);
     setSubmitted(false);
+    setCoords(NO_COORDS);
+    setLocating(NO_FLAGS);
+    setLocMsg(NO_MSGS);
   };
 
   if (isSuccess && created) {
@@ -200,9 +380,9 @@ export default function BookParcelForm() {
             {created.trackingId}
           </p>
           <p className="mt-3 text-sm text-[#64748b]">
-            Estimated cost{" "}
+            Delivery fee{" "}
             <span className="font-semibold text-[#0f2a4a]">
-              ${created.price.toFixed(2)}
+              {formatFee(created.fee)}
             </span>
             . Payment is still pending.
           </p>
@@ -245,26 +425,26 @@ export default function BookParcelForm() {
         className="grid gap-6 lg:grid-cols-[1.6fr_1fr]"
       >
         <div className="space-y-6">
-          {/* Service */}
+          {/* Parcel type */}
           <section className="rounded-2xl bg-white p-5 shadow-[0_6px_24px_rgba(15,42,74,0.06)] ring-1 ring-black/5 sm:p-6">
             <h2 className="text-base font-semibold text-[#0f2a4a]">
-              1. Choose a service
+              1. What are you sending?
             </h2>
             <div
               role="radiogroup"
-              aria-label="Service"
-              className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4"
+              aria-label="Parcel type"
+              className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-5"
             >
-              {SERVICE_KEYS.map((key) => {
-                const { label, icon: Icon } = SERVICE_RATES[key];
-                const active = service === key;
+              {TYPE_KEYS.map((key) => {
+                const { label, icon: Icon } = PARCEL_TYPES[key];
+                const active = parcelType === key;
                 return (
                   <motion.button
                     key={key}
                     type="button"
                     role="radio"
                     aria-checked={active}
-                    onClick={() => setService(key)}
+                    onClick={() => setParcelType(key)}
                     whileTap={{ scale: 0.95 }}
                     className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff7a1a] ${active ? "border-[#ff7a1a] bg-[#ff7a1a]/10 text-[#0f2a4a] shadow-sm shadow-[#ff7a1a]/20" : "border-[#e2e8f0] text-[#64748b] hover:border-[#cbd5e1] hover:text-[#0f2a4a]"}`}
                   >
@@ -277,34 +457,6 @@ export default function BookParcelForm() {
                 );
               })}
             </div>
-            <AnimatePresence initial={false}>
-              {isIntl && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: EASE }}
-                  className="overflow-hidden"
-                >
-                  <div className="pt-5">
-                    <Field id="country" label="Destination country">
-                      <select
-                        id="country"
-                        value={country}
-                        onChange={(e) => setCountry(e.target.value)}
-                        className={`${inputClass()} h-11`}
-                      >
-                        {INTL_RATES.map((r) => (
-                          <option key={r.country} value={r.country}>
-                            {r.country}
-                          </option>
-                        ))}
-                      </select>
-                    </Field>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </section>
 
           {/* Addresses */}
@@ -323,6 +475,13 @@ export default function BookParcelForm() {
                   className={`${inputClass(show("pickup"))} h-11`}
                   {...aria("pickup")}
                 />
+                <LocationRow
+                  coords={coords.pickup}
+                  busy={locating.pickup}
+                  message={locMsg.pickup}
+                  onPin={() => pin("pickup")}
+                  onUseMine={useMyLocation}
+                />
               </Field>
               <Field
                 id="delivery"
@@ -331,17 +490,35 @@ export default function BookParcelForm() {
               >
                 <input
                   id="delivery"
-                  placeholder={
-                    isIntl
-                      ? `Full address in ${country}`
-                      : "House, road, area, city"
-                  }
+                  placeholder="House, road, area, city"
                   value={values.delivery}
                   onChange={set("delivery")}
                   className={`${inputClass(show("delivery"))} h-11`}
                   {...aria("delivery")}
                 />
+                <LocationRow
+                  coords={coords.delivery}
+                  busy={locating.delivery}
+                  message={locMsg.delivery}
+                  onPin={() => pin("delivery")}
+                />
               </Field>
+
+              {/* Receiver is me */}
+              <label
+                htmlFor="useMine"
+                className="flex cursor-pointer items-center gap-2.5 text-sm text-[#334155]"
+              >
+                <input
+                  id="useMine"
+                  type="checkbox"
+                  checked={useMine}
+                  onChange={(e) => toggleUseMine(e.target.checked)}
+                  className="size-4 shrink-0 rounded border-[#cbd5e1] accent-[#ff7a1a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff7a1a]"
+                />
+                I am the receiver (use my name and phone)
+              </label>
+
               <div className="grid gap-5 sm:grid-cols-2">
                 <Field
                   id="receiverName"
@@ -376,23 +553,23 @@ export default function BookParcelForm() {
             </div>
           </section>
 
-          {/* Parcel */}
+          {/* Parcel details */}
           <section className="rounded-2xl bg-white p-5 shadow-[0_6px_24px_rgba(15,42,74,0.06)] ring-1 ring-black/5 sm:p-6">
             <h2 className="text-base font-semibold text-[#0f2a4a]">
               3. Parcel details
             </h2>
-            <div className="mt-4 space-y-5">
+            <div className="mt-4">
               <div className="grid gap-5 sm:grid-cols-2">
                 <Field
                   id="weight"
-                  label={`Weight (kg, max ${rate.maxKg})`}
+                  label={`Weight (kg, max ${MAX_WEIGHT_KG})`}
                   error={show("weight")}
                 >
                   <input
                     id="weight"
                     type="number"
                     min={0.1}
-                    max={rate.maxKg}
+                    max={MAX_WEIGHT_KG}
                     step={0.1}
                     inputMode="decimal"
                     value={weight}
@@ -403,7 +580,8 @@ export default function BookParcelForm() {
                 </Field>
                 <Field
                   id="description"
-                  label="What are you sending?"
+                  label="Description"
+                  optional
                   error={show("description")}
                 >
                   <input
@@ -416,16 +594,6 @@ export default function BookParcelForm() {
                   />
                 </Field>
               </div>
-              <Field id="notes" label="Notes for the courier" optional>
-                <textarea
-                  id="notes"
-                  rows={3}
-                  placeholder="Fragile, call before arriving..."
-                  value={values.notes}
-                  onChange={set("notes")}
-                  className={`${inputClass()} resize-none py-3`}
-                />
-              </Field>
             </div>
           </section>
         </div>
@@ -434,30 +602,25 @@ export default function BookParcelForm() {
         <aside>
           <div className="sticky top-24 overflow-hidden rounded-2xl bg-gradient-to-br from-[#0f2a4a] to-[#143a63] p-6 text-white shadow-lg shadow-[#0f2a4a]/20">
             <p className="text-xs font-medium uppercase tracking-widest text-white/60">
-              Estimated cost
+              Estimated delivery fee
             </p>
-            <motion.p
-              key={price}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25 }}
+            <p
+              className="mt-2 text-3xl font-extrabold tracking-tight"
               aria-live="polite"
-              className="mt-2 text-4xl font-extrabold tracking-tight"
             >
-              ${price.toFixed(2)}
-            </motion.p>
+              {weightValid ? `~${formatFee(estimateFee(weightNum))}` : "-"}
+            </p>
+            <p className="mt-1 text-[11px] text-white/50">
+              Based on weight. The final fee is confirmed after booking.
+            </p>
 
             <dl className="mt-5 space-y-2 border-t border-white/15 pt-4 text-sm">
               <div className="flex justify-between">
-                <dt className="text-white/65">Service</dt>
-                <dd className="font-medium">{rate.label}</dd>
+                <dt className="text-white/65">Type</dt>
+                <dd className="font-medium">
+                  {PARCEL_TYPES[parcelType].label}
+                </dd>
               </div>
-              {isIntl && (
-                <div className="flex justify-between">
-                  <dt className="text-white/65">To</dt>
-                  <dd className="font-medium">{country}</dd>
-                </div>
-              )}
               <div className="flex justify-between">
                 <dt className="text-white/65">Weight</dt>
                 <dd className="font-medium">
@@ -465,10 +628,10 @@ export default function BookParcelForm() {
                 </dd>
               </div>
               <div className="flex justify-between">
-                <dt className="flex items-center gap-1.5 text-white/65">
-                  <Clock aria-hidden="true" className="size-3.5" /> Delivery
-                </dt>
-                <dd className="font-medium">{time}</dd>
+                <dt className="text-white/65">Map pins</dt>
+                <dd className="font-medium">
+                  {(coords.pickup ? 1 : 0) + (coords.delivery ? 1 : 0)} of 2
+                </dd>
               </div>
             </dl>
 
@@ -489,12 +652,12 @@ export default function BookParcelForm() {
 
             <motion.button
               type="submit"
-              disabled={isPending}
-              whileHover={isPending ? undefined : { scale: 1.02 }}
-              whileTap={isPending ? undefined : { scale: 0.98 }}
+              disabled={busy}
+              whileHover={busy ? undefined : { scale: 1.02 }}
+              whileTap={busy ? undefined : { scale: 0.98 }}
               className="group mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#ff7a1a] text-sm font-semibold text-white shadow-lg shadow-[#ff7a1a]/30 transition-colors hover:bg-[#e8590c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f2a4a] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {isPending ? (
+              {busy ? (
                 <>
                   <Loader2 aria-hidden="true" className="size-4 animate-spin" />
                   Booking...
@@ -509,12 +672,17 @@ export default function BookParcelForm() {
                 </>
               )}
             </motion.button>
-            <p className="mt-3 text-center text-[11px] text-white/50">
-              Final price is confirmed by SwiftShip after booking.
-            </p>
           </div>
         </aside>
       </form>
     </>
+  );
+}
+
+export default function BookParcelForm() {
+  return (
+    <Suspense fallback={null}>
+      <BookParcelFormInner />
+    </Suspense>
   );
 }

@@ -9,6 +9,8 @@ import {
 } from "@/components/shared/motion";
 import { ServiceDetail } from "@/constants/services";
 
+const BOOK_HREF = "/dashboard/customer/book";
+
 export default function ServiceDetailSection({
   service,
   reverse,
@@ -88,7 +90,7 @@ export default function ServiceDetailSection({
 
           <div className="mt-7 flex flex-wrap items-center gap-4">
             <Link
-              href="/register"
+              href={`${BOOK_HREF}?type=${encodeURIComponent(id)}`}
               className="group inline-flex items-center gap-2 rounded-full bg-[#ff7a1a] px-6 py-3 text-sm font-semibold text-white shadow-md shadow-[#ff7a1a]/25 transition-all hover:bg-[#e8590c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff7a1a] focus-visible:ring-offset-2"
             >
               Book this service

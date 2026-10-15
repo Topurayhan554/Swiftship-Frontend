@@ -18,7 +18,6 @@ import { EASE } from "@/components/shared/motion";
 import { NAV_LINKS } from "@/constants/home";
 import { useGetMe, useLogout } from "@/hooks";
 
-// Adjust to your real dashboard routes.
 const DASHBOARD_ROUTES: Record<string, string> = {
   ADMIN: "/dashboard/admin",
   CUSTOMER: "/dashboard/customer",
@@ -98,8 +97,12 @@ export default function Navbar() {
         <motion.div
           whileHover={reduce ? undefined : { scale: 1.05 }}
           whileTap={reduce ? undefined : { scale: 0.96 }}
+          className="flex items-center gap-2.5"
         >
           <Logo className="h-10 w-10" />
+          <span className="text-lg font-bold tracking-tight text-[#0f2a4a]">
+            Swift<span className="text-[#ff7a1a]">Ship</span>
+          </span>
         </motion.div>
 
         <ul className="hidden items-center gap-7 lg:flex">

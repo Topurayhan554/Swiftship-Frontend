@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { Loader2, X } from "lucide-react";
-import { SERVICE_RATES } from "@/constants/pricing";
+import { formatFee, getParcelType, paymentUi } from "@/lib/parcel";
 import type { Parcel, UpdateParcelPayload } from "@/types";
 import StatusBadge from "../StatusBadge";
 import { useCancelParcel, useUpdateParcel } from "@/hooks/useParcel";
@@ -84,6 +84,8 @@ export function ViewParcelModal({
   parcel: Parcel;
   onClose: () => void;
 }) {
+  const pay = paymentUi(p);
+
   return (
     <Modal title="Parcel details" onClose={onClose}>
       <dl className="divide-y divide-black/5">
@@ -92,19 +94,13 @@ export function ViewParcelModal({
           <StatusBadge status={p.status} />
         </Row>
         <Row label="Payment">
-          <span
-            className={
-              p.paymentStatus === "PAID" ? "text-green-600" : "text-[#e8590c]"
-            }
-          >
-            {p.paymentStatus === "PAID" ? "Paid" : "Unpaid"}
-          </span>
+          <span className={pay.className}>{pay.label}</span>
         </Row>
-        <Row label="Service">{SERVICE_RATES[p.service].label}</Row>
-        <Row label="Weight">{p.weight} kg</Row>
-        <Row label="Price">${p.price.toFixed(2)}</Row>
-        <Row label="Pickup">{p.from}</Row>
-        <Row label="Delivery">{p.to}</Row>
+        <Row label="Type">{getParcelType(p.parcelType).label}</Row>
+        <Row label="Weight">{p.weightKg} kg</Row>
+        <Row label="Fee">{formatFee(p.fee)}</Row>
+        <Row label="Pickup">{p.pickupAddress}</Row>
+        <Row label="Delivery">{p.deliveryAddress}</Row>
         <Row label="Receiver">{p.receiverName}</Row>
         <Row label="Receiver phone">{p.receiverPhone}</Row>
         <Row label="Description">{p.description || "-"}</Row>
@@ -137,11 +133,11 @@ export function EditParcelModal({
 }) {
   const { mutate, isPending, isError, error } = useUpdateParcel();
   const [v, setV] = useState<EditValues>({
-    pickupAddress: p.from,
-    deliveryAddress: p.to,
+    pickupAddress: p.pickupAddress,
+    deliveryAddress: p.deliveryAddress,
     receiverName: p.receiverName,
     receiverPhone: p.receiverPhone,
-    description: p.description,
+    description: p.description ?? "",
   });
   const [submitted, setSubmitted] = useState(false);
 

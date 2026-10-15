@@ -7,7 +7,6 @@ import {
   CreditCard,
   Eye,
   ExternalLink,
-  Loader2,
   PackagePlus,
   PackageSearch,
   Pencil,
@@ -15,7 +14,15 @@ import {
   XCircle,
 } from "lucide-react";
 import { EASE } from "@/components/shared/motion";
-import { SERVICE_RATES } from "@/constants/pricing";
+import {
+  canCancel,
+  canEdit,
+  canPay,
+  formatFee,
+  getParcelType,
+  normalizeParcel,
+  paymentUi,
+} from "@/lib/parcel";
 import type { Parcel } from "@/types";
 import EmptyState from "../EmptyState";
 import PageHeader from "../PageHeader";
@@ -25,6 +32,7 @@ import {
   EditParcelModal,
   ViewParcelModal,
 } from "./ParcelModals";
+import PayMethodModal from "./PayMethodModal";
 import { useMyParcels } from "@/hooks/useParcel";
 import { usePayParcel } from "@/hooks";
 
@@ -41,13 +49,6 @@ const matchFilter = (status: string, f: FilterKey) =>
   (f === "delivered" && status === "DELIVERED") ||
   (f === "cancelled" && (status === "CANCELLED" || status === "FAILED")) ||
   (f === "active" && !["DELIVERED", "CANCELLED", "FAILED"].includes(status));
-
-const canPay = (p: Parcel) =>
-  p.paymentStatus === "UNPAID" &&
-  p.status !== "CANCELLED" &&
-  p.status !== "FAILED";
-const canEdit = (p: Parcel) => p.status === "PENDING";
-const canCancel = (p: Parcel) => p.status === "PENDING";
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-GB", {
@@ -85,23 +86,32 @@ function IconButton({
 }
 
 export default function ParcelsTable() {
-  const { data: parcels, isLoading, isError, refetch } = useMyParcels();
+  const { data: rawParcels, isLoading, isError, refetch } = useMyParcels();
+  const parcels = useMemo(
+    () => (rawParcels ?? []).map(normalizeParcel),
+    [rawParcels],
+  );
+
+  console.log("RAW:", rawParcels?.[0]);
+  console.log("NORMALIZED:", parcels[0]);
   const pay = usePayParcel();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<FilterKey>("all");
   const [viewing, setViewing] = useState<Parcel | null>(null);
   const [editing, setEditing] = useState<Parcel | null>(null);
   const [cancelling, setCancelling] = useState<Parcel | null>(null);
+  const [payingParcel, setPayingParcel] = useState<Parcel | null>(null);
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return (parcels ?? []).filter(
+    return parcels.filter(
       (p) =>
         matchFilter(p.status, filter) &&
         (!q ||
           p.trackingId.toLowerCase().includes(q) ||
           p.receiverName.toLowerCase().includes(q) ||
-          p.to.toLowerCase().includes(q)),
+          p.pickupAddress.toLowerCase().includes(q) ||
+          p.deliveryAddress.toLowerCase().includes(q)),
     );
   }, [parcels, query, filter]);
 
@@ -120,15 +130,6 @@ export default function ParcelsTable() {
           </Link>
         }
       />
-
-      {pay.isError && (
-        <p
-          role="alert"
-          className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600"
-        >
-          Could not start the payment. Please try again.
-        </p>
-      )}
 
       <div className="rounded-2xl bg-white shadow-[0_6px_24px_rgba(15,42,74,0.06)] ring-1 ring-black/5">
         {/* Toolbar */}
@@ -178,7 +179,7 @@ export default function ParcelsTable() {
               id="parcel-search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search ID, receiver, city"
+              placeholder="Search ID, receiver, address"
               className="h-10 w-full rounded-xl border border-[#e2e8f0] bg-white pl-9 pr-3 text-sm text-[#0f2a4a] outline-none transition-colors placeholder:text-[#94a3b8] focus:border-[#ff7a1a] focus:ring-2 focus:ring-[#ff7a1a]/25"
             />
           </div>
@@ -236,13 +237,13 @@ export default function ParcelsTable() {
                     Route
                   </th>
                   <th scope="col" className="px-3 py-3 font-semibold">
-                    Service
+                    Type
                   </th>
                   <th
                     scope="col"
                     className="px-3 py-3 text-right font-semibold"
                   >
-                    Price
+                    Fee
                   </th>
                   <th scope="col" className="px-3 py-3 font-semibold">
                     Payment
@@ -258,8 +259,9 @@ export default function ParcelsTable() {
               <tbody className="divide-y divide-black/5">
                 <AnimatePresence initial={false}>
                   {rows.map((p, i) => {
-                    const Icon = SERVICE_RATES[p.service].icon;
-                    const paying = pay.isPending && pay.variables === p.id;
+                    const typeInfo = getParcelType(p.parcelType);
+                    const Icon = typeInfo.icon;
+                    const payUi = paymentUi(p);
                     return (
                       <motion.tr
                         key={p.id}
@@ -290,8 +292,16 @@ export default function ParcelsTable() {
                             {p.receiverPhone}
                           </p>
                         </td>
-                        <td className="px-3 py-4 text-[#475569]">
-                          {p.from} → {p.to}
+                        <td className="max-w-[240px] px-3 py-4 text-[#475569]">
+                          <p className="truncate" title={p.pickupAddress}>
+                            {p.pickupAddress}
+                          </p>
+                          <p
+                            className="truncate text-xs text-[#94a3b8]"
+                            title={p.deliveryAddress}
+                          >
+                            → {p.deliveryAddress}
+                          </p>
                         </td>
                         <td className="px-3 py-4">
                           <span className="inline-flex items-center gap-1.5 text-[#475569]">
@@ -299,20 +309,20 @@ export default function ParcelsTable() {
                               aria-hidden="true"
                               className="size-4 text-[#ff7a1a]"
                             />
-                            {SERVICE_RATES[p.service].label}
+                            {typeInfo.label}
                           </span>
                           <p className="text-xs text-[#94a3b8]">
-                            {p.weight} kg
+                            {p.weightKg} kg
                           </p>
                         </td>
                         <td className="px-3 py-4 text-right font-semibold text-[#0f2a4a]">
-                          ${p.price.toFixed(2)}
+                          {formatFee(p.fee)}
                         </td>
                         <td className="px-3 py-4">
                           <span
-                            className={`text-xs font-semibold ${p.paymentStatus === "PAID" ? "text-green-600" : "text-[#e8590c]"}`}
+                            className={`text-xs font-semibold ${payUi.className}`}
                           >
-                            {p.paymentStatus === "PAID" ? "Paid" : "Unpaid"}
+                            {payUi.label}
                           </span>
                         </td>
                         <td className="px-3 py-4">
@@ -323,21 +333,16 @@ export default function ParcelsTable() {
                             {canPay(p) && (
                               <button
                                 type="button"
-                                onClick={() => pay.mutate(p.id)}
-                                disabled={pay.isPending}
-                                className="mr-1 inline-flex items-center gap-1.5 rounded-full bg-[#ff7a1a] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#e8590c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff7a1a] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                                onClick={() => {
+                                  pay.reset();
+                                  setPayingParcel(p);
+                                }}
+                                className="mr-1 inline-flex items-center gap-1.5 rounded-full bg-[#ff7a1a] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#e8590c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff7a1a] focus-visible:ring-offset-2"
                               >
-                                {paying ? (
-                                  <Loader2
-                                    aria-hidden="true"
-                                    className="size-3.5 animate-spin"
-                                  />
-                                ) : (
-                                  <CreditCard
-                                    aria-hidden="true"
-                                    className="size-3.5"
-                                  />
-                                )}
+                                <CreditCard
+                                  aria-hidden="true"
+                                  className="size-3.5"
+                                />
                                 Pay
                               </button>
                             )}
@@ -400,6 +405,17 @@ export default function ParcelsTable() {
         <CancelParcelModal
           parcel={cancelling}
           onClose={() => setCancelling(null)}
+        />
+      )}
+      {payingParcel && (
+        <PayMethodModal
+          parcel={payingParcel}
+          pendingMethod={pay.isPending ? (pay.variables?.method ?? null) : null}
+          isError={pay.isError}
+          onClose={() => setPayingParcel(null)}
+          onSelect={(method) =>
+            pay.mutate({ parcelId: payingParcel.id, method })
+          }
         />
       )}
     </>

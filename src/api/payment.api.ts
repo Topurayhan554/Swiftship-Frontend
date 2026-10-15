@@ -1,23 +1,37 @@
 import apiClient from "@/lib/apiClient";
 
-// /parcels/payment/initiate
-export async function initiatePayment(parcelId: string): Promise<string> {
-  const res = await apiClient("/parcels/payment/initiate", {
+export type PaymentMethod = "bkash" | "stripe";
+
+const PAYMENT_ENDPOINTS: Record<PaymentMethod, string> = {
+  bkash: "/parcels/payment/initiate",
+  stripe: "/parcels/payment/initiate-stripe",
+};
+
+const URL_KEYS = [
+  "paymentUrl",
+  "bkashURL",
+  "bkashUrl",
+  "redirectUrl",
+  "checkoutUrl",
+  "sessionUrl",
+  "url",
+] as const;
+
+export async function initiatePayment(
+  parcelId: string,
+  method: PaymentMethod,
+): Promise<string> {
+  const res = await apiClient(PAYMENT_ENDPOINTS[method], {
     method: "POST",
     body: { parcelId },
   });
 
   const d = (res?.data?.data ?? res?.data ?? {}) as Record<string, unknown>;
-  const url =
-    d.paymentUrl ??
-    d.bkashURL ??
-    d.bkashUrl ??
-    d.redirectUrl ??
-    d.checkoutUrl ??
-    d.url;
 
-  if (typeof url !== "string" || !url) {
-    throw new Error("Payment URL not found in response");
+  for (const key of URL_KEYS) {
+    const value = d[key];
+    if (typeof value === "string" && value) return value;
   }
-  return url;
+
+  throw new Error("Payment URL not found in response");
 }
