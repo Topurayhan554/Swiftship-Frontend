@@ -1,5 +1,4 @@
-import { cache } from "react";
-import { STATUS_FLOW, type ParcelStatus } from "@/constants/track";
+import type { ParcelStatus } from "@/constants/track";
 
 export type ParcelEvent = { status: ParcelStatus; time: string; note: string };
 
@@ -27,65 +26,56 @@ const NOTES: Record<ParcelStatus, string> = {
   FAILED: "Delivery attempt failed",
 };
 
-const fmt = (d: Date) =>
-  d.toLocaleString("en-GB", {
+const TYPE_LABEL: Record<string, string> = {
+  DOCUMENT: "Document Delivery",
+  PACKAGE: "Parcel Delivery",
+  FRAGILE: "Fragile Delivery",
+  ELECTRONICS: "Electronics Delivery",
+  OTHER: "Parcel Delivery",
+};
+
+const fmt = (d: string | Date) =>
+  new Date(d).toLocaleString("en-GB", {
     day: "numeric",
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
   });
 
-function hash(s: string) {
-  return [...s].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
-}
+export function toTrackParcel(raw: any): Parcel | null {
+  if (!raw) return null;
 
-export async function fetchParcel(rawId: string): Promise<Parcel | null> {
-  await new Promise((r) => setTimeout(r, 900));
+  const status = raw.status as ParcelStatus;
+  const logs: any[] = raw.statusLogs ?? [];
 
-  const id = rawId.toUpperCase();
-  if (id.startsWith("X")) return null; // demo: IDs starting with X are "not found"
+  const events: ParcelEvent[] = [...logs]
+    .sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    )
+    .map((l) => ({
+      status: (l.status ?? l.toStatus) as ParcelStatus,
+      time: fmt(l.createdAt),
+      note: l.note ?? NOTES[(l.status ?? l.toStatus) as ParcelStatus] ?? "",
+    }));
 
-  const flow = STATUS_FLOW.map((s) => s.key);
-  let status: ParcelStatus;
-  if (id.includes("CANCEL")) status = "CANCELLED";
-  else if (id.includes("FAIL")) status = "FAILED";
-  else if (id === "SS-2041") status = "IN_TRANSIT";
-  else status = flow[hash(id) % flow.length];
-
-  const reached: ParcelStatus[] =
-    status === "CANCELLED"
-      ? flow.slice(0, 2)
-      : status === "FAILED"
-        ? flow.slice(0, 5)
-        : flow.slice(0, flow.indexOf(status) + 1);
-  const all =
-    status === "CANCELLED" || status === "FAILED"
-      ? [...reached, status]
-      : reached;
-
-  const now = Date.now();
-  const events: ParcelEvent[] = all.map((s, i) => ({
-    status: s,
-    time: fmt(new Date(now - (all.length - i) * 5 * 3600_000)),
-    note: NOTES[s],
-  }));
+  let eta = "Not available";
+  if (status === "DELIVERED") eta = "Delivered";
+  else if (raw.estimatedDelivery) eta = fmt(raw.estimatedDelivery);
 
   return {
-    id,
+    id: raw.trackingId,
     status,
-    service: "Parcel Delivery",
-    weight: "2.5 kg",
-    from: "Dinajpur, Rangpur",
-    to: "Dhaka, Dhaka",
-    receiver: "Rahim Uddin",
-    courier: reached.includes("ASSIGNED") ? "Karim Hossain" : null,
-    eta:
-      status === "DELIVERED" ? "Delivered" : fmt(new Date(now + 20 * 3600_000)),
+    service: TYPE_LABEL[raw.parcelType] ?? "Parcel Delivery",
+    weight: `${raw.weightKg} kg`,
+    from: raw.pickupAddress,
+    to: raw.deliveryAddress,
+    receiver: raw.receiverName,
+    courier: raw.courier?.name ?? null,
+    eta,
     events,
   };
 }
-
-export const getParcel = cache(fetchParcel);
 
 export function normalizeId(raw: string) {
   try {

@@ -3,18 +3,17 @@ import TrackHero from "@/components/track/TrackHero";
 import TrackSection from "@/components/track/TrackSection";
 import { normalizeId } from "@/lib/track";
 
-export default async function TrackingLayout({
-  children,
-  params,
-}: {
+type Props = {
   children: ReactNode;
   params: Promise<{ trackingId: string }>;
-}) {
-  const { trackingId } = await params;
+};
+
+export default async function TrackLayout({ children, params }: Props) {
+  const trackingId = normalizeId((await params).trackingId);
 
   return (
     <>
-      <TrackHero defaultValue={normalizeId(trackingId)} />
+      <TrackHero defaultValue={trackingId} />
       <TrackSection>{children}</TrackSection>
     </>
   );

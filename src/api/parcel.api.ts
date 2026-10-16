@@ -24,3 +24,7 @@ export function cancelParcel(id: string) {
     method: "PATCH",
   });
 }
+
+export function trackParcel(trackingId: string) {
+  return apiClient(`/parcels/track/${encodeURIComponent(trackingId)}`);
+}

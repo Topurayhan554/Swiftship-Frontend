@@ -1,5 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { cancelParcel, createParcel, getMyParcels, updateParcel } from "@/api";
+import {
+  cancelParcel,
+  createParcel,
+  getMyParcels,
+  trackParcel,
+  updateParcel,
+} from "@/api";
+import { toTrackParcel, type Parcel as TrackParcel } from "@/lib/track";
 import type { CreateParcelPayload, Parcel, UpdateParcelPayload } from "@/types";
 
 export const PARCELS_KEY = ["my-parcels"];
@@ -24,6 +31,31 @@ export function useMyParcels() {
         (p) => p.status !== "CANCELLED" && p.payment?.status === "PENDING",
       );
       return waiting ? 2000 : false;
+    },
+  });
+}
+
+export function useTrackParcel(trackingId: string) {
+  return useQuery<TrackParcel | null>({
+    queryKey: ["track", trackingId],
+    enabled: !!trackingId,
+    retry: false,
+    refetchInterval: (query) => {
+      const s = query.state.data?.status;
+      return s && s !== "DELIVERED" && s !== "CANCELLED" && s !== "FAILED"
+        ? 30000
+        : false;
+    },
+    queryFn: async () => {
+      try {
+        const res = await trackParcel(trackingId);
+        console.log("TRACK RES:", res);
+        return toTrackParcel(res?.data?.data ?? res?.data);
+      } catch (err) {
+        const e = err as { status?: number; response?: { status?: number } };
+        if ((e?.status ?? e?.response?.status) === 404) return null;
+        throw err;
+      }
     },
   });
 }
