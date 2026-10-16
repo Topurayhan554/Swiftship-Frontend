@@ -25,6 +25,8 @@ export default function RoleGuard({
   const role = normalizeRole(user?.role);
   const isLoggedOut = !isPending && (isError || !user);
   const allowed = !!role && roles.includes(role);
+  // const allowed = !!role && roles.includes(role);
+  // console.log("GUARD:", { raw: user?.role, role, roles, allowed });
 
   useEffect(() => {
     if (isLoggedOut) router.replace("/login");

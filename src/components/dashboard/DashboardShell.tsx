@@ -38,9 +38,7 @@ export default function DashboardShell({
       const next = !prev;
       try {
         localStorage.setItem(STORAGE_KEY, next ? "1" : "0");
-      } catch {
-        /* storage unavailable */
-      }
+      } catch {}
       return next;
     });
 

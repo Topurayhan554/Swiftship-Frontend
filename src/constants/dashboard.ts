@@ -1,7 +1,9 @@
 import {
+  History,
   LayoutDashboard,
   Package,
   PackagePlus,
+  Truck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -49,6 +51,16 @@ export const ROLE_NAV: Record<DashboardRole, NavItem[]> = {
       label: "Overview",
       icon: LayoutDashboard,
       exact: true,
+    },
+    {
+      href: "/dashboard/courier/deliveries",
+      label: "Active deliveries",
+      icon: Truck,
+    },
+    {
+      href: "/dashboard/courier/history",
+      label: "History",
+      icon: History,
     },
   ],
   ADMIN: [
