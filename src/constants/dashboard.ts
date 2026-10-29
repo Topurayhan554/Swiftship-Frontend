@@ -1,9 +1,14 @@
 import {
+  CreditCard,
   History,
   LayoutDashboard,
   Package,
   PackagePlus,
+  ScrollText,
+  Star,
   Truck,
+  User,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -62,6 +67,11 @@ export const ROLE_NAV: Record<DashboardRole, NavItem[]> = {
       label: "History",
       icon: History,
     },
+    {
+      href: "/dashboard/courier/profile",
+      label: "Profile",
+      icon: User,
+    },
   ],
   ADMIN: [
     {
@@ -69,6 +79,36 @@ export const ROLE_NAV: Record<DashboardRole, NavItem[]> = {
       label: "Overview",
       icon: LayoutDashboard,
       exact: true,
+    },
+    {
+      href: "/dashboard/admin/users",
+      label: "Users",
+      icon: Users,
+    },
+    {
+      href: "/dashboard/admin/couriers",
+      label: "Couriers",
+      icon: Truck,
+    },
+    {
+      href: "/dashboard/admin/parcels",
+      label: "Parcels",
+      icon: Package,
+    },
+    {
+      href: "/dashboard/admin/payments",
+      label: "Payments",
+      icon: CreditCard,
+    },
+    {
+      href: "/dashboard/admin/reviews",
+      label: "Reviews",
+      icon: Star,
+    },
+    {
+      href: "/dashboard/admin/audit-logs",
+      label: "Audit logs",
+      icon: ScrollText,
     },
   ],
 };

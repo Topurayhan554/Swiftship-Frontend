@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getCourierParcels, updateParcelStatus } from "@/api";
 import type { ParcelStatus } from "@/constants/track";
+import { getCourierParcels, updateParcelStatus } from "@/api";
 
 export type CourierParcel = {
   id: string;
