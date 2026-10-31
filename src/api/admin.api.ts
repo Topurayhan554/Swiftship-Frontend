@@ -10,7 +10,7 @@ import {
 import { list, Query, request } from "./client.api";
 
 export const adminApi = {
-  stats: async () => (await request<AdminStats>("/admin/stats")).data,
+  stats: async () => (await request<AdminStats>("/admin/dashboard-stats")).data,
 
   parcels: (q?: Query) => list<AdminParcel>("/parcels", q),
   assignCourier: (id: string, courierId: string) =>
@@ -32,12 +32,12 @@ export const adminApi = {
       body: JSON.stringify({ isBlocked }),
     }),
 
-  payments: (q?: Query) => list<AdminPayment>("/payments", q),
+  payments: (q?: Query) => list<AdminPayment>("/payments/all-payments", q),
 
   reviews: (q?: Query) => list<AdminReview>("/reviews", q),
   deleteReview: (id: string) => request(`/reviews/${id}`, { method: "DELETE" }),
 
-  auditLogs: (q?: Query) => list<AuditLog>("/audit-logs", q),
+  auditLogs: (q?: Query) => list<AuditLog>("/admin/audit-logs", q),
 };
 
 export type ListQuery = Query;
