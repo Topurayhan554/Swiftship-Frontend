@@ -92,8 +92,8 @@ export default function ParcelsTable() {
     [rawParcels],
   );
 
-  console.log("RAW:", rawParcels?.[0]);
-  console.log("NORMALIZED:", parcels[0]);
+  // console.log("RAW:", rawParcels?.[0]);
+  // console.log("NORMALIZED:", parcels[0]);
   const pay = usePayParcel();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<FilterKey>("all");

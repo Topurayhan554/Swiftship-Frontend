@@ -49,7 +49,7 @@ export function useTrackParcel(trackingId: string) {
     queryFn: async () => {
       try {
         const res = await trackParcel(trackingId);
-        console.log("TRACK RES:", res);
+        // console.log("TRACK RES:", res);
         return toTrackParcel(res?.data?.data ?? res?.data);
       } catch (err) {
         const e = err as { status?: number; response?: { status?: number } };
