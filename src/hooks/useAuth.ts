@@ -8,9 +8,17 @@ import {
   verifyAccount,
 } from "@/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const USER_KEY = ["user"];
+
+const AUTH_PAGES = [
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
+];
 
 function useAfterLogin() {
   const router = useRouter();
@@ -62,7 +70,7 @@ export function useLogout() {
   return useMutation({
     mutationFn: userLogout,
     onSettled: () => {
-      queryClient.clear();
+      queryClient.removeQueries({ queryKey: USER_KEY });
       router.push("/login");
       router.refresh();
     },
@@ -78,19 +86,27 @@ export function useGoogleOAuth() {
   });
 }
 
-export function useGetMe() {
+export function useGetMe(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: USER_KEY,
     queryFn: getMe,
     retry: false,
+    refetchOnWindowFocus: false,
+    ...options,
   });
 }
 
-
 export function useAuth() {
-  const { data, isLoading } = useGetMe();
+  const pathname = usePathname();
+  const isAuthPage = AUTH_PAGES.some((p) => pathname.startsWith(p));
+
+  const { data, isLoading } = useGetMe({ enabled: !isAuthPage });
 
   const user = data?.data ?? null;
 
-  return { user, isLoading, isAuthenticated: !!user };
+  return {
+    user,
+    isLoading: isAuthPage ? false : isLoading,
+    isAuthenticated: !!user,
+  };
 }

@@ -114,7 +114,6 @@ export default function GoogleLoginButton({
             size="large"
             width={width}
             text="continue_with"
-            click_listener={() => console.log("[google] button clicked")}
             onSuccess={handleGoogleSuccess}
             onError={handleGoogleError}
           />
