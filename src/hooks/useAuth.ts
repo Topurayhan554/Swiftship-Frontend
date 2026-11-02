@@ -1,7 +1,9 @@
 import {
+  forgotPassword,
   getMe,
   googleOAuth,
   resendOtp,
+  resetPassword,
   userLogin,
   userLogout,
   userRegistration,
@@ -109,4 +111,16 @@ export function useAuth() {
     isLoading: isAuthPage ? false : isLoading,
     isAuthenticated: !!user,
   };
+}
+
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: forgotPassword,
+  });
+}
+
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: resetPassword,
+  });
 }
