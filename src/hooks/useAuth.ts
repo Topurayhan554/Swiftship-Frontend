@@ -85,3 +85,12 @@ export function useGetMe() {
     retry: false,
   });
 }
+
+
+export function useAuth() {
+  const { data, isLoading } = useGetMe();
+
+  const user = data?.data ?? null;
+
+  return { user, isLoading, isAuthenticated: !!user };
+}

@@ -22,15 +22,22 @@ export default function GoogleLoginButton({
 }: GoogleLoginButtonProps) {
   const { mutate: googleLogin, isPending } = useGoogleOAuth();
   const router = useRouter();
+  const hasClientId = Boolean(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
 
   const wrapRef = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(320);
+  const [width, setWidth] = useState<number | null>(null);
 
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
-    const update = () =>
-      setWidth(Math.min(400, Math.max(200, Math.round(el.offsetWidth))));
+
+    const update = () => {
+      const next = Math.min(400, Math.max(200, Math.round(el.offsetWidth)));
+      setWidth((prev) =>
+        prev !== null && Math.abs(prev - next) < 5 ? prev : next,
+      );
+    };
+
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
@@ -38,6 +45,7 @@ export default function GoogleLoginButton({
   }, []);
 
   const handleGoogleSuccess = (credentialResponse: { credential?: string }) => {
+    console.log("[google] success callback fired");
     const idToken = credentialResponse.credential;
 
     if (!idToken) {
@@ -61,6 +69,7 @@ export default function GoogleLoginButton({
           router.push(redirectTo);
         },
         onError: (err) => {
+          console.error("[google] backend error:", err);
           toast.add({
             title: "Google OAuth Failed",
             description:
@@ -73,6 +82,7 @@ export default function GoogleLoginButton({
   };
 
   const handleGoogleError = () => {
+    console.error("[google] GoogleLogin onError fired");
     toast.add({
       title: "Google OAuth Failed",
       description: "Something went wrong. Please try again",
@@ -92,17 +102,24 @@ export default function GoogleLoginButton({
         {isPending ? "Signing in..." : label}
       </div>
 
-      <div className="absolute inset-0 flex items-center justify-center overflow-hidden opacity-0 [&_iframe]:!h-12 [&>div]:!w-full">
-        <GoogleLogin
-          theme="outline"
-          shape="pill"
-          size="large"
-          width={width}
-          text="continue_with"
-          onSuccess={handleGoogleSuccess}
-          onError={handleGoogleError}
-        />
-      </div>
+      {hasClientId && width !== null && (
+        <div
+          className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden opacity-[0.01] [&_iframe]:!h-12"
+          style={{ colorScheme: "light" }}
+        >
+          <GoogleLogin
+            key={width}
+            theme="outline"
+            shape="pill"
+            size="large"
+            width={width}
+            text="continue_with"
+            click_listener={() => console.log("[google] button clicked")}
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+          />
+        </div>
+      )}
     </div>
   );
 }

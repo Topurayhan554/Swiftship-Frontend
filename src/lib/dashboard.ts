@@ -3,7 +3,7 @@ import {
   SERVICE_RATES,
   type ServiceKey,
 } from "@/constants/pricing";
-import type { Parcel } from "@/types";
+import type { Parcel, ParcelPayment, ParcelType } from "@/types";
 
 export type RawParcel = {
   id: string;
@@ -14,7 +14,8 @@ export type RawParcel = {
   parcelType?: string;
   status: string;
   paymentStatus?: string;
-  payment?: { status?: string };
+  payment?: Partial<ParcelPayment> | null;
+  fee?: number | string;
   price?: number | string;
   totalPrice?: number | string;
   cost?: number | string;
@@ -30,6 +31,8 @@ export type RawParcel = {
   receiverName: string;
   receiverPhone: string;
   description?: string | null;
+  estimatedDelivery?: string | null;
+  actualDelivery?: string | null;
   createdAt: string;
 };
 
@@ -61,40 +64,37 @@ export function estimatePrice(
   return base + perKg * weightKg;
 }
 
-const TYPE_TO_SERVICE: Record<string, string> = {
-  DOCUMENT: "document",
-  PACKAGE: "parcel",
-  FRAGILE: "fragile",
-  ELECTRONICS: "electronics",
-  OTHER: "parcel",
-};
-
-function toServiceKey(raw: RawParcel): ServiceKey {
-  const direct = String(raw.service ?? raw.serviceType ?? "").toLowerCase();
-  if (direct in SERVICE_RATES) return direct as ServiceKey;
-
-  const mapped = TYPE_TO_SERVICE[String(raw.parcelType ?? "").toUpperCase()];
-  if (mapped && mapped in SERVICE_RATES) return mapped as ServiceKey;
-
-  return "parcel" as ServiceKey;
-}
-
 export function mapParcel(raw: RawParcel): Parcel {
+  const fee = num(raw.fee, raw.price, raw.totalPrice, raw.cost, raw.amount);
+
+  const payment: ParcelPayment | null =
+    raw.payment || raw.paymentStatus
+      ? {
+          id: raw.payment?.id ?? "",
+          status: (raw.payment?.status ??
+            raw.paymentStatus ??
+            "PENDING") as ParcelPayment["status"],
+          gateway: raw.payment?.gateway ?? "STRIPE",
+          amount: num(raw.payment?.amount, fee),
+          paidAt: raw.payment?.paidAt ?? null,
+        }
+      : null;
+
   return {
     id: raw.id,
     trackingId: raw.trackingId ?? raw.trackingNumber ?? "",
-    service: toServiceKey(raw),
-    status: raw.status as Parcel["status"],
-    paymentStatus: (raw.paymentStatus ??
-      raw.payment?.status ??
-      "UNPAID") as Parcel["paymentStatus"],
-    price: num(raw.price, raw.totalPrice, raw.cost, raw.amount),
-    weight: num(raw.weightKg, raw.weight),
-    from: raw.pickupAddress ?? raw.pickup ?? raw.from ?? "",
-    to: raw.deliveryAddress ?? raw.delivery ?? raw.to ?? "",
+    parcelType: (raw.parcelType ?? "OTHER") as ParcelType,
+    description: raw.description ?? null,
+    weightKg: num(raw.weightKg, raw.weight),
+    fee,
+    pickupAddress: raw.pickupAddress ?? raw.pickup ?? raw.from ?? "",
+    deliveryAddress: raw.deliveryAddress ?? raw.delivery ?? raw.to ?? "",
     receiverName: raw.receiverName,
     receiverPhone: raw.receiverPhone,
-    description: raw.description ?? "",
+    status: raw.status as Parcel["status"],
+    estimatedDelivery: raw.estimatedDelivery ?? null,
+    actualDelivery: raw.actualDelivery ?? null,
     createdAt: raw.createdAt,
+    payment,
   };
 }

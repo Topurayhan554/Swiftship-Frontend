@@ -13,18 +13,24 @@ export default function PromoBanner() {
     <section className="bg-[#f7f9fc] pb-14">
       <div className="mx-auto max-w-6xl px-4">
         <Reveal scale={0.97} y={36}>
-          <div className="relative isolate overflow-hidden rounded-2xl bg-[#0f2a4a]">
+          <div className="relative isolate flex min-h-64 items-center overflow-hidden rounded-2xl bg-[#0f2a4a] sm:min-h-72">
+            {/* Background image */}
             <Image
               src="/images/promo-boxes.jpg"
-              alt=""
+              alt="Promo boxes"
               fill
+              priority
+              className="-z-20 object-cover object-right"
               sizes="(min-width: 1152px) 1152px, 100vw"
-              className="-z-10 object-cover object-right opacity-90"
             />
-            <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#0f2a4a] via-[#0f2a4a]/85 to-transparent" />
+
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 -z-10 bg-gradient-to-r from-[#0f2a4a] via-[#0f2a4a]/85 to-transparent"
+            />
 
             <Float
-              className="absolute right-10 top-8 hidden sm:block"
+              className="absolute right-10 top-8 z-10 hidden sm:block"
               y={14}
               rotate={8}
               duration={4}
@@ -38,7 +44,7 @@ export default function PromoBanner() {
             <Stagger
               gap={0.12}
               delay={0.2}
-              className="px-8 py-12 sm:px-12 sm:py-14"
+              className="relative z-10 px-8 py-12 sm:px-12 sm:py-14"
             >
               <StaggerItem>
                 <p className="text-sm font-semibold text-[#ff7a1a]">

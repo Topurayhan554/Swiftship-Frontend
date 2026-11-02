@@ -8,6 +8,7 @@ import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 
 const STORAGE_KEY = "swiftship-sidebar-collapsed";
+const THEME_KEY = "swiftship-theme";
 
 export default function DashboardShell({
   userRole,
@@ -22,6 +23,7 @@ export default function DashboardShell({
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => setMenuOpen(false), [pathname]);
 
@@ -29,7 +31,15 @@ export default function DashboardShell({
     try {
       setCollapsed(localStorage.getItem(STORAGE_KEY) === "1");
     } catch {
-      /* storage unavailable */
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      const dark = localStorage.getItem(THEME_KEY) === "dark";
+      setIsDark(dark);
+      document.documentElement.classList.toggle("dark", dark);
+    } catch {
     }
   }, []);
 
@@ -38,6 +48,16 @@ export default function DashboardShell({
       const next = !prev;
       try {
         localStorage.setItem(STORAGE_KEY, next ? "1" : "0");
+      } catch {}
+      return next;
+    });
+
+  const toggleTheme = () =>
+    setIsDark((prev) => {
+      const next = !prev;
+      document.documentElement.classList.toggle("dark", next);
+      try {
+        localStorage.setItem(THEME_KEY, next ? "dark" : "light");
       } catch {}
       return next;
     });
@@ -54,7 +74,12 @@ export default function DashboardShell({
       <div
         className={`transition-[padding] duration-300 ${collapsed ? "lg:pl-[72px]" : "lg:pl-64"}`}
       >
-        <Topbar user={user ?? {}} onMenu={() => setMenuOpen(true)} />
+        <Topbar
+          user={user ?? {}}
+          onMenu={() => setMenuOpen(true)}
+          isDark={isDark}
+          onToggleTheme={toggleTheme}
+        />
         <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">{children}</main>
       </div>
     </div>
