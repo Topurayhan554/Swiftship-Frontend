@@ -71,15 +71,13 @@ export default function ForgotPasswordForm() {
             instructions to reset your password.
           </p>
         </div>
-        <Button
-          asChild
-          className="h-12 w-full rounded-full bg-gradient-to-r from-[#ff7a1a] to-[#ff9a4d] text-[15px] font-semibold text-white shadow-lg shadow-[#ff7a1a]/35"
+        <Link
+          href={`/reset-password?email=${encodeURIComponent(sentTo)}`}
+          className="group flex h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#ff7a1a] to-[#ff9a4d] text-[15px] font-semibold text-white shadow-lg shadow-[#ff7a1a]/35 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[#ff7a1a]/45 active:translate-y-0"
         >
-          <Link href={`/reset-password?email=${encodeURIComponent(sentTo)}`}>
-            Enter reset code
-            <ArrowRight className="size-4" />
-          </Link>
-        </Button>
+          Enter reset code
+          <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+        </Link>
         <button
           type="button"
           onClick={() => setSentTo(null)}

@@ -17,8 +17,9 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email") ?? "";
+  const otp = (searchParams.get("otp") ?? "").replace(/\D/g, "").slice(0, 6);
 
-  return <ResetPasswordForm email={email} />;
+  return <ResetPasswordForm email={email} initialOtp={otp} />;
 }
 
 export default function ResetPasswordPage() {

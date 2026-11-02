@@ -31,13 +31,19 @@ const labelClass = "pl-1 text-[12.5px] font-semibold text-[#0f2a4a]";
 const leftIconClass =
   "pointer-events-none absolute left-4 top-1/2 size-[18px] -translate-y-1/2 text-[#64748b]";
 
-export default function ResetPasswordForm({ email }: { email: string }) {
+export default function ResetPasswordForm({
+  email,
+  initialOtp = "",
+}: {
+  email: string;
+  initialOtp?: string;
+}) {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const { mutate: reset, isPending } = useResetPassword();
 
   const form = useForm({
-    defaultValues: { otp: "", newPassword: "" },
+    defaultValues: { otp: initialOtp, newPassword: "" },
     validators: { onSubmit: resetPasswordSchema },
     onSubmit: ({ value }) => {
       reset(
