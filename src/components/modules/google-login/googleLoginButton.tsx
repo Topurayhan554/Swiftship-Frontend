@@ -45,7 +45,6 @@ export default function GoogleLoginButton({
   }, []);
 
   const handleGoogleSuccess = (credentialResponse: { credential?: string }) => {
-    console.log("[google] success callback fired");
     const idToken = credentialResponse.credential;
 
     if (!idToken) {
